@@ -46,7 +46,7 @@ namespace MultiplayerAssets
         Queue<byte[]> packetQueue = new Queue<byte[]>();
 
         private ushort serverTick;
-        
+
         public UIManager _UIManager;
         void Start()
         {
@@ -78,7 +78,7 @@ namespace MultiplayerAssets
             Console.WriteLine("Started Timer");
         }
 
-        void HandlePing()
+        void OnTick()
         {
             sw.Stop();
 
@@ -145,12 +145,12 @@ namespace MultiplayerAssets
 
         void PlayerPosition(byte[] packetContent)
         {
-            Tuple<ushort?, Vector3> respons = byteToPosition(packetContent, 1);
+            Tuple<ushort?, Vector3> response = byteToPosition(packetContent, 1);
 
-            if (respons.Item1 != null)
+            if (response.Item1 != null)
             {
-                ushort id = (ushort)respons.Item1;
-                Vector3 position = respons.Item2;
+                ushort id = (ushort)response.Item1;
+                Vector3 position = response.Item2;
 
                 clientsManager.PlayerPosition(id, position);
             }
@@ -158,6 +158,11 @@ namespace MultiplayerAssets
 
         void FixedUpdate()
         {
+            if (stream == null || !client.Connected || stream.CanRead || !stream.CanWrite)
+            {
+                return;
+            }
+
             if (localPlayer && oldpos != localPlayer.transform.position)
             {
                 positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
@@ -170,11 +175,12 @@ namespace MultiplayerAssets
                 {
                     stream.Write(packet, 0, packet.Length);
                 }
+
+                packetQueue.Clear();
             }
 
-            packetQueue.Clear();
 
-            while (stream.CanRead && stream.DataAvailable)
+            while (stream.DataAvailable)
             {
                 //Storlek av en ushort: 2 bytes
                 byte[] buffer = new byte[2];
@@ -190,18 +196,15 @@ namespace MultiplayerAssets
                 switch (packetType)
                 {
                     case (ushort)CSTypes.ping:
-                        HandlePing();
+                        OnTick();
                         break;
                     case (ushort)CSTypes.playerPosition:
                         PlayerPosition(packetContent);
                         break;
-                    case (ushort)SCTypes.SyncTick:
-                        HandleTickSync(packetContent);
-                        break;
-
                 }
 
             }
+
         }
 
     }

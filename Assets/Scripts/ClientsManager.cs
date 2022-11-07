@@ -34,6 +34,7 @@ namespace MultiplayerAssets
         {
             Debug.Log("Start");
         }
+
         public void HandleNewPlayer(ushort id, Vector3 position)
         {
             GameObject player = Instantiate(playerPrefab, position, Quaternion.identity);
