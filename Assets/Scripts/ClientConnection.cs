@@ -7,6 +7,8 @@ using System.Text;
 using StopWatch = System.Diagnostics.Stopwatch;
 using System.Linq;
 using System.Timers;
+using System.Threading;
+using System.Threading.Tasks;
 
 using UnityEngine;
 
@@ -14,16 +16,15 @@ using StarterAssets;
 
 namespace MultiplayerAssets
 {
-
     public enum CSTypes
     {
-        ping,
+        ping = 1,
         playerJoin,
         playerPosition,
     }
     public enum SCTypes
     {
-        ping,
+        ping = 1,
         SyncTick,
     }
 
@@ -48,34 +49,75 @@ namespace MultiplayerAssets
         private ushort serverTick;
 
         public UIManager _UIManager;
+
+        public static object _lock = new object();
         void Start()
         {
+
             _UIManager.submitButton.onClick.AddListener(Connect);
             serverTick = 2;
         }
-
         void Connect()
         {
             client = new TcpClient(IpAddress, port);
             stream = client.GetStream();
 
-            if (stream.CanRead)
-            {
-                _UIManager.UIState = false;
-                localPlayer.GetComponent<StarterAssets.StarterAssetsInputs>().cursorLocked = true;
-                StartTimer();
+            _UIManager.UIState = false;
+            localPlayer.GetComponent<StarterAssets.StarterAssetsInputs>().cursorLocked = true;
 
+        }
+
+        void FixedUpdate()
+        {
+            RunProcessData();
+        }
+        void RunProcessData()
+        {
+            if (stream.DataAvailable)
+
+            {
+                ProcessData();
             }
         }
 
-
-        void StartTimer()
+        void ProcessData()
         {
-            System.Timers.Timer timer = new System.Timers.Timer(8);
-            timer.Elapsed += (System.Object source, ElapsedEventArgs e) => serverTick++;
+            Debug.Log("ProcessData!");
+            //TODO: Check stream.Length edge case
+            int streamLength = 4096;
+            byte[] streamBuffer = new byte[streamLength];
+            stream.Read(streamBuffer, 0, (int)streamLength);
+            PacketStream result = new PacketStream(streamBuffer);
 
-            timer.Enabled = true;
-            Console.WriteLine("Started Timer");
+            serverTick++;
+
+            while (result.offset < result.Length)
+            {
+                Debug.Log(result.offset);
+                ushort packetType = result.ReadUShort();
+
+                if (packetType == 0)
+                {
+                    return;
+                }
+
+                ushort packetLength = result.ReadUShort();
+                Debug.Log(packetLength);
+
+                byte[] packetContent = result.ReadContent(packetLength);
+
+
+                switch (packetType)
+                {
+                    case (ushort)CSTypes.ping:
+                        OnTick();
+                        break;
+                    case (ushort)CSTypes.playerPosition:
+                        PlayerPosition(packetContent);
+                        break;
+                }
+
+            }
         }
 
         void OnTick()
@@ -91,6 +133,24 @@ namespace MultiplayerAssets
 
             sw.Reset();
             sw.Start();
+
+            if (localPlayer && oldpos != localPlayer.transform.position)
+            {
+                positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
+                oldpos = localPlayer.transform.position;
+            }
+
+            if (packetQueue.Count > 0)
+            {
+                foreach (byte[] packet in packetQueue)
+                {
+                    stream.Write(packet, 0, packet.Length);
+                }
+
+                packetQueue.Clear();
+            }
+
+
         }
 
         void positionToPacket(Vector3 position, ushort type)
@@ -154,57 +214,6 @@ namespace MultiplayerAssets
 
                 clientsManager.PlayerPosition(id, position);
             }
-        }
-
-        void FixedUpdate()
-        {
-            if (stream == null || !client.Connected || stream.CanRead || !stream.CanWrite)
-            {
-                return;
-            }
-
-            if (localPlayer && oldpos != localPlayer.transform.position)
-            {
-                positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
-                oldpos = localPlayer.transform.position;
-            }
-
-            if (packetQueue.Count > 0)
-            {
-                foreach (byte[] packet in packetQueue)
-                {
-                    stream.Write(packet, 0, packet.Length);
-                }
-
-                packetQueue.Clear();
-            }
-
-
-            while (stream.DataAvailable)
-            {
-                //Storlek av en ushort: 2 bytes
-                byte[] buffer = new byte[2];
-                stream.Read(buffer, 0, buffer.Length);
-                ushort packetType = BitConverter.ToUInt16(buffer, 0);
-
-                stream.Read(buffer, 0, buffer.Length);
-                ushort packetLength = BitConverter.ToUInt16(buffer, 0);
-
-                byte[] packetContent = new byte[packetLength];
-                int bytes = stream.Read(packetContent, 0, packetContent.Length);
-
-                switch (packetType)
-                {
-                    case (ushort)CSTypes.ping:
-                        OnTick();
-                        break;
-                    case (ushort)CSTypes.playerPosition:
-                        PlayerPosition(packetContent);
-                        break;
-                }
-
-            }
-
         }
 
     }

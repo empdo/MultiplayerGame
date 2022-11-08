@@ -11,13 +11,13 @@ namespace CoolNameSpace
 {
     public enum CSTypes
     {
-        ping,
+        ping = 1,
         playerJoin,
         playerPosition,
     }
     public enum SCTypes
     {
-        ping,
+        ping = 1,
         SyncTick,
     }
     public class Server

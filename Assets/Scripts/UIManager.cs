@@ -17,13 +17,15 @@ namespace MultiplayerAssets
         public TextMeshProUGUI pingText;
         private bool _UIState;
         public bool UIState
-        {
-        get => _UIState;
-        set {
-            _UIState = value;
-            SetUIState();
 
-        }
+        {
+            get => _UIState;
+            set
+            {
+                _UIState = value;
+                SetUIState();
+
+            }
         }
         void SetUIState()
         {
