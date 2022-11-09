@@ -21,11 +21,13 @@ namespace MultiplayerAssets
         ping = 1,
         playerJoin,
         playerPosition,
+        playerRotation,
     }
     public enum SCTypes
     {
         ping = 1,
         SyncTick,
+        playerRotation,
     }
 
     public class ClientConnection : MonoBehaviour
@@ -37,7 +39,8 @@ namespace MultiplayerAssets
         public GameObject playerPrefab;
         public GameObject localPlayer;
 
-        public Vector3 oldpos;
+        Vector3 oldpos;
+        float oldRot;
 
         private int currentTickRate = 8;
         StopWatch sw = new StopWatch();
@@ -93,7 +96,6 @@ namespace MultiplayerAssets
 
             while (result.offset < result.Length)
             {
-                Debug.Log(result.offset);
                 ushort packetType = result.ReadUShort();
 
                 if (packetType == 0)
@@ -102,7 +104,6 @@ namespace MultiplayerAssets
                 }
 
                 ushort packetLength = result.ReadUShort();
-                Debug.Log(packetLength);
 
                 byte[] packetContent = result.ReadContent(packetLength);
 
@@ -114,6 +115,10 @@ namespace MultiplayerAssets
                         break;
                     case (ushort)CSTypes.playerPosition:
                         PlayerPosition(packetContent);
+
+                        break;
+                    case (ushort)CSTypes.playerRotation:
+                        PlayerRotation(packetContent);
                         break;
                 }
 
@@ -134,11 +139,22 @@ namespace MultiplayerAssets
             sw.Reset();
             sw.Start();
 
+
             if (localPlayer && oldpos != localPlayer.transform.position)
             {
                 positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
                 oldpos = localPlayer.transform.position;
             }
+
+            float rotation = localPlayer.transform.localRotation.eulerAngles.y;
+
+            if (localPlayer && oldRot != rotation) ;
+            {
+                RotationToPacket(rotation, (ushort)CSTypes.playerRotation);
+                oldRot = rotation;
+            }
+
+
 
             if (packetQueue.Count > 0)
             {
@@ -151,6 +167,27 @@ namespace MultiplayerAssets
             }
 
 
+        }
+
+        public byte[] ConstructPackage(ushort packetType, byte[] data)
+        {
+            List<byte> packet = new List<byte>();
+
+            ushort packetLength = (ushort)(data.Length);
+
+            packet.AddRange(BitConverter.GetBytes(packetType));
+            packet.AddRange(BitConverter.GetBytes(packetLength));
+            packet.AddRange(data);
+
+            return packet.ToArray();
+        }
+        void RotationToPacket(float rotation, ushort type)
+        {
+            byte[] _rotation = BitConverter.GetBytes(rotation);
+
+            byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, _rotation);
+
+            packetQueue.Enqueue(packet);
         }
 
         void positionToPacket(Vector3 position, ushort type)
@@ -203,6 +240,15 @@ namespace MultiplayerAssets
 
         }
 
+        Tuple<ushort, float> ReadPlayerRotation(byte[] bytes)
+        {
+            ushort id = BitConverter.ToUInt16(bytes, 0);
+
+            float rotation = BitConverter.ToSingle(bytes, sizeof(ushort));
+
+            return Tuple.Create<ushort, float>(id, rotation);
+        }
+
         void PlayerPosition(byte[] packetContent)
         {
             Tuple<ushort?, Vector3> response = byteToPosition(packetContent, 1);
@@ -214,6 +260,13 @@ namespace MultiplayerAssets
 
                 clientsManager.PlayerPosition(id, position);
             }
+        }
+
+        void PlayerRotation(byte[] packetContent)
+        {
+            Tuple<ushort, float> response = ReadPlayerRotation(packetContent);
+
+            clientsManager.PlayerRotation((ushort)response.Item1, response.Item2);
         }
 
     }

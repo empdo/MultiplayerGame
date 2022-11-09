@@ -14,11 +14,13 @@ namespace CoolNameSpace
         ping = 1,
         playerJoin,
         playerPosition,
+        playerRotation,
     }
     public enum SCTypes
     {
         ping = 1,
         SyncTick,
+        playerRotation,
     }
     public class Server
     {
@@ -63,6 +65,10 @@ namespace CoolNameSpace
             List<byte> packet = new List<byte>();
 
             ushort packetLength = (ushort)(data.Length);
+            if (packetType == (ushort)CSTypes.playerRotation)
+            {
+                Console.WriteLine(data.Length);
+            }
 
             packet.AddRange(BitConverter.GetBytes(packetType));
             packet.AddRange(BitConverter.GetBytes(packetLength));
@@ -148,12 +154,31 @@ namespace CoolNameSpace
 
         public void HandlePlayerPosition(byte[] packetContent, Client client)
         {
+            float[] position = byteToPosition(packetContent);
+            client.UpdatePosition(position);
 
             byte[] bytes = PositionToBytes(new float[3] { client.x, client.y, client.z }, client.id);
             byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, bytes);
 
-            float[] position = byteToPosition(packetContent);
-            client.UpdatePosition(position);
+            SendToAllOther(client, packet);
+        }
+
+        public void HandlePlayerRotation(byte[] packetContent, Client client)
+        {
+
+            List<byte> bytes = new List<byte>();
+
+            float rotation = BitConverter.ToSingle(packetContent);
+            client.rotation = rotation;
+
+            byte[] rotationBytes = BitConverter.GetBytes(client.rotation);
+            byte[] idBytes = BitConverter.GetBytes(client.id);
+
+            bytes.AddRange(idBytes);
+            bytes.AddRange(rotationBytes);
+
+            byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, bytes.ToArray());
+
 
             SendToAllOther(client, packet);
         }
@@ -203,6 +228,9 @@ namespace CoolNameSpace
                     {
                         case (ushort)CSTypes.playerPosition:
                             HandlePlayerPosition(packetContent, client);
+                            break;
+                        case (ushort)CSTypes.playerRotation:
+                            HandlePlayerRotation(packetContent, client);
                             break;
                     }
 

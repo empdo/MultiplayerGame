@@ -44,6 +44,18 @@ namespace MultiplayerAssets
             Debug.Log("Instantiate player at:" + position);
         }
 
+        public void PlayerRotation(int id, float rotation)
+        {
+
+            Client? client = clients.Find(client => client.id == id);
+
+            if (client != null)
+            {
+                Quaternion target = Quaternion.Euler(new Vector3(0, rotation, 0));
+                client.player.transform.rotation = target;
+            }
+        }
+
         public void PlayerPosition(ushort id, Vector3 position)
         {
             Client? client = clients.Find(client => client.id == id);

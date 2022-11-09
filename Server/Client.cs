@@ -13,6 +13,8 @@ namespace CoolNameSpace
 
         public float x, y, z;
 
+        public float rotation;
+
         public Queue<byte[]> packetQueue = new Queue<byte[]>();
         public Client(TcpClient _client, int _id)
         {
@@ -21,13 +23,15 @@ namespace CoolNameSpace
             id = (ushort)_id;
         }
 
-        public void UpdatePosition(float[] position) {
+        public void UpdatePosition(float[] position)
+        {
             x = position[0];
             y = position[1];
             z = position[2];
         }
 
-        public void ApplyDeltaPosition(float[] position) {
+        public void ApplyDeltaPosition(float[] position)
+        {
             x += position[0];
             y += position[1];
             z += position[2];
