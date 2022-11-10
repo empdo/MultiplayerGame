@@ -33,7 +33,7 @@ namespace MultiplayerAssets
     public class ClientConnection : MonoBehaviour
     {
         public int port = 13000;
-        string IpAddress = "127.0.0.1";
+        public string IpAddress = "83.227.32.208";
         static TcpClient client;
         static NetworkStream stream;
         public GameObject playerPrefab;
@@ -62,11 +62,13 @@ namespace MultiplayerAssets
         }
         void Connect()
         {
-            client = new TcpClient(IpAddress, port);
+            Debug.Log(_UIManager.IpInput.text + " " + Int32.Parse(_UIManager.PortInput.text));
+            client = new TcpClient("83.227.32.208", 13000);
             stream = client.GetStream();
 
             _UIManager.UIState = false;
             localPlayer.GetComponent<StarterAssets.StarterAssetsInputs>().cursorLocked = true;
+
 
         }
 
@@ -167,6 +169,16 @@ namespace MultiplayerAssets
             }
 
 
+        }
+
+        public void SetIP(string value)
+        {
+            IpAddress = value;
+        }
+
+        public void SetPort(string value)
+        {
+            port = Int32.Parse(value);
         }
 
         public byte[] ConstructPackage(ushort packetType, byte[] data)

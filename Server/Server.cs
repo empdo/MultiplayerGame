@@ -9,12 +9,23 @@ using System.Timers;
 
 namespace CoolNameSpace
 {
+
+    public enum PlayerStates
+    {
+        Staning = 1,
+        RunningForward,
+        RunningBackwards,
+        WalkingForwards,
+        WalkingBackwards,
+
+    }
     public enum CSTypes
     {
         ping = 1,
         playerJoin,
         playerPosition,
         playerRotation,
+        playerStateChange,
     }
     public enum SCTypes
     {
@@ -33,7 +44,7 @@ namespace CoolNameSpace
             try
             {
                 Int32 port = 13000;
-                IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+                IPAddress localAddr = IPAddress.Parse("0.0.0.0");
 
                 server = new TcpListener(localAddr, port);
                 server.Start();
@@ -152,6 +163,37 @@ namespace CoolNameSpace
 
         }
 
+        public void HandlePlayerState(byte[] packetContent, Client client)
+        {
+            List<byte> bytes = new List<byte>();
+
+            ushort _state = BitConverter.ToUInt16(packetContent);
+
+            CoolNameSpace.PlayerStates state;
+
+            if (Enum.IsDefined(typeof(CoolNameSpace.PlayerStates), _state))
+            {
+                state = (CoolNameSpace.PlayerStates)_state;
+            }
+            else
+            {
+                return;
+            }
+
+            client.playerState = state;
+
+
+            byte[] stateBytes = BitConverter.GetBytes((ushort)client.playerState);
+            byte[] idBytes = BitConverter.GetBytes(client.id);
+
+            bytes.AddRange(idBytes);
+            bytes.AddRange(stateBytes);
+
+            byte[] packet = ConstructPackage((ushort)CSTypes.playerStateChange, bytes.ToArray());
+
+
+            SendToAllOther(client, packet);
+        }
         public void HandlePlayerPosition(byte[] packetContent, Client client)
         {
             float[] position = byteToPosition(packetContent);
@@ -231,6 +273,9 @@ namespace CoolNameSpace
                             break;
                         case (ushort)CSTypes.playerRotation:
                             HandlePlayerRotation(packetContent, client);
+                            break;
+                        case (ushort)CSTypes.playerStateChange:
+                            HandlePlayerState(packetContent, client);
                             break;
                     }
 

@@ -15,6 +15,7 @@ namespace CoolNameSpace
 
         public float rotation;
 
+        public CoolNameSpace.PlayerStates playerState = CoolNameSpace.PlayerStates.Staning;
         public Queue<byte[]> packetQueue = new Queue<byte[]>();
         public Client(TcpClient _client, int _id)
         {
