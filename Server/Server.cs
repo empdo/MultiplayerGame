@@ -30,7 +30,6 @@ namespace CoolNameSpace
     public enum SCTypes
     {
         ping = 1,
-        SyncTick,
         playerRotation,
     }
     public class Server
@@ -98,12 +97,6 @@ namespace CoolNameSpace
         {
             //Tickrate 125, intervall på 8ms
             currentTick++;
-
-            //Every fifth second
-            if (currentTick % 625 == 0)
-            {
-                SyncTick();
-            }
 
             byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
             foreach (Client client in clients.Keys)
