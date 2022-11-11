@@ -63,9 +63,6 @@ namespace CoolNameSpace
             {
                 Console.WriteLine("SocketException: {0}", e);
             }
-            finally
-            {
-            }
 
             Console.Write("\nHit enter to continue...");
             Console.Read();
@@ -225,18 +222,6 @@ namespace CoolNameSpace
             SendToAllOther(client, packet);
         }
 
-        void SyncTick()
-        {
-            byte[] tick = BitConverter.GetBytes(currentTick);
-            byte[] packet = ConstructPackage((ushort)SCTypes.SyncTick, tick);
-
-            foreach (Client client in clients.Keys)
-            {
-                client.packetQueue.Enqueue(packet);
-            }
-        }
-
-
         public void clientHandler(TcpClient _client)
         {
             Console.WriteLine("Connection established from: " + _client.Client.RemoteEndPoint);
@@ -246,12 +231,8 @@ namespace CoolNameSpace
             Client client = new Client(_client, _id);
             clients.Add(client, _id);
 
-            SyncTick();
-
             try
             {
-
-
                 while (_client.Client.Connected)
                 {
                     if (client.stream.CanRead & client.stream.DataAvailable)
@@ -282,7 +263,6 @@ namespace CoolNameSpace
                                 HandlePlayerState(packetContent, client);
                                 break;
                         }
-
                     }
                 }
             }
