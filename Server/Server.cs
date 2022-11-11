@@ -215,6 +215,19 @@ namespace CoolNameSpace
             SendToAllOther(client, packet);
         }
 
+        void OnJoin(Client client)
+        {
+            foreach (Client _client in clients.Keys)
+            {
+                if (client != _client)
+                {
+
+                    byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, PositionToBytes(new float[] { _client.x, _client.y, _client.z }, _client.id));
+                    client.packetQueue.Enqueue(packet);
+                }
+            }
+        }
+
         public void clientHandler(TcpClient _client)
         {
             Console.WriteLine("Connection established from: " + _client.Client.RemoteEndPoint);
@@ -223,6 +236,8 @@ namespace CoolNameSpace
             int _id = clients.Count + 1;
             Client client = new Client(_client, _id);
             clients.Add(client, _id);
+
+            OnJoin(client);
 
             try
             {
