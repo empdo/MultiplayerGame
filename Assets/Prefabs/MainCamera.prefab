@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 9005220659476430818}
   - component: {fileID: 9005220659476430821}
   - component: {fileID: 9005220659476430820}
-  - component: {fileID: 9018249871969862650}
   - component: {fileID: 2779373384791953795}
   - component: {fileID: 5135736192740683814}
   - component: {fileID: 5801400762490814210}
@@ -89,40 +88,6 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9005220659476430823}
   m_Enabled: 1
---- !u!114 &9018249871969862650
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9005220659476430823}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ShowDebugText: 0
-  m_ShowCameraFrustum: 1
-  m_IgnoreTimeScale: 0
-  m_WorldUpOverride: {fileID: 0}
-  m_UpdateMethod: 2
-  m_BlendUpdateMethod: 1
-  m_DefaultBlend:
-    m_Style: 1
-    m_Time: 2
-    m_CustomCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-  m_CustomBlends: {fileID: 0}
-  m_CameraCutEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_CameraActivatedEvent:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!114 &2779373384791953795
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -135,6 +100,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06f50dfe3d34a4a038c71da7431633dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IpInput: {fileID: 0}
+  PortInput: {fileID: 0}
+  submitButton: {fileID: 0}
+  pingText: {fileID: 0}
+  enviroment: {fileID: 0}
 --- !u!114 &5135736192740683814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -180,7 +150,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc2588a4ba5b54c2c92ebcf777ce5838, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerPrefab: {fileID: 0}
+  playerPrefab: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
+    type: 3}
 --- !u!114 &5218923916089624950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -194,9 +165,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   port: 13000
+  IpAddress: 83.227.32.208
   playerPrefab: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
     type: 3}
+  localPlayerPrefab: {fileID: 8515999597533934103, guid: 0674ae83686646571a9e49ba395f3c3c,
+    type: 3}
   localPlayer: {fileID: 0}
-  oldpos: {x: 0, y: 0, z: 0}
-  timeStampBuffer: 
-  clientsManager: {fileID: 0}
+  clientsManager: {fileID: 5801400762490814210}
+  _UIManager: {fileID: 2779373384791953795}

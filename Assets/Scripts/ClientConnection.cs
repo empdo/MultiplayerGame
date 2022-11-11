@@ -37,6 +37,8 @@ namespace MultiplayerAssets
         static TcpClient client;
         static NetworkStream stream;
         public GameObject playerPrefab;
+
+        public GameObject localPlayerPrefab;
         public GameObject localPlayer;
 
         Vector3 oldpos;
@@ -62,13 +64,15 @@ namespace MultiplayerAssets
         }
         void Connect()
         {
-            Debug.Log(_UIManager.IpInput.text + " " + Int32.Parse(_UIManager.PortInput.text));
-            client = new TcpClient("83.227.32.208", 13000);
+            Debug.Log("Connecting");
+            client = new TcpClient(IpAddress, port);
             stream = client.GetStream();
 
             _UIManager.UIState = false;
-            localPlayer.GetComponent<StarterAssets.StarterAssetsInputs>().cursorLocked = true;
 
+            localPlayer = Instantiate(localPlayerPrefab, new Vector3(0, 5, 0), Quaternion.identity);
+
+            localPlayer.GetComponent<StarterAssets.StarterAssetsInputs>().cursorLocked = true;
 
         }
 
@@ -78,7 +82,7 @@ namespace MultiplayerAssets
         }
         void RunProcessData()
         {
-            if (stream.DataAvailable)
+            if (stream != null && stream.DataAvailable)
 
             {
                 ProcessData();
@@ -174,11 +178,13 @@ namespace MultiplayerAssets
         public void SetIP(string value)
         {
             IpAddress = value;
+            Debug.Log(value);
         }
 
         public void SetPort(string value)
         {
             port = Int32.Parse(value);
+            Debug.Log(port);
         }
 
         public byte[] ConstructPackage(ushort packetType, byte[] data)

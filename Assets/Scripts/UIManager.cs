@@ -15,6 +15,8 @@ namespace MultiplayerAssets
         public TMP_InputField PortInput;
         public Button submitButton;
         public TextMeshProUGUI pingText;
+
+        public GameObject enviroment;
         private bool _UIState;
         public bool UIState
 
@@ -27,12 +29,18 @@ namespace MultiplayerAssets
 
             }
         }
+
+        void Start()
+        {
+            _UIState = true;
+        }
         void SetUIState()
         {
 
             submitButton.gameObject.SetActive(_UIState);
             PortInput.gameObject.SetActive(_UIState);
             IpInput.gameObject.SetActive(_UIState);
+            enviroment.SetActive(!_UIState);
 
         }
 

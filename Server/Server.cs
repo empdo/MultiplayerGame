@@ -248,42 +248,51 @@ namespace CoolNameSpace
 
             SyncTick();
 
-            while (_client.Client.Connected)
+            try
             {
-                if (client.stream.CanRead & client.stream.DataAvailable)
+
+
+                while (_client.Client.Connected)
                 {
-                    Console.WriteLine("Listening for packages...");
-
-                    //Storlek av en ushort: 2 bytes
-                    byte[] buffer = new byte[2];
-                    client.stream.Read(buffer, 0, buffer.Length);
-                    ushort packetType = BitConverter.ToUInt16(buffer, 0);
-
-                    client.stream.Read(buffer, 0, buffer.Length);
-                    ushort packetLength = BitConverter.ToUInt16(buffer, 0);
-
-                    byte[] packetContent = new byte[packetLength];
-                    int bytes = client.stream.Read(packetContent, 0, packetContent.Length);
-
-                    Console.WriteLine("packetType: " + packetType + " with length " + packetLength);
-                    switch (packetType)
+                    if (client.stream.CanRead & client.stream.DataAvailable)
                     {
-                        case (ushort)CSTypes.playerPosition:
-                            HandlePlayerPosition(packetContent, client);
-                            break;
-                        case (ushort)CSTypes.playerRotation:
-                            HandlePlayerRotation(packetContent, client);
-                            break;
-                        case (ushort)CSTypes.playerStateChange:
-                            HandlePlayerState(packetContent, client);
-                            break;
-                    }
+                        Console.WriteLine("Listening for packages...");
 
+                        //Storlek av en ushort: 2 bytes
+                        byte[] buffer = new byte[2];
+                        client.stream.Read(buffer, 0, buffer.Length);
+                        ushort packetType = BitConverter.ToUInt16(buffer, 0);
+
+                        client.stream.Read(buffer, 0, buffer.Length);
+                        ushort packetLength = BitConverter.ToUInt16(buffer, 0);
+
+                        byte[] packetContent = new byte[packetLength];
+                        int bytes = client.stream.Read(packetContent, 0, packetContent.Length);
+
+                        Console.WriteLine("packetType: " + packetType + " with length " + packetLength);
+                        switch (packetType)
+                        {
+                            case (ushort)CSTypes.playerPosition:
+                                HandlePlayerPosition(packetContent, client);
+                                break;
+                            case (ushort)CSTypes.playerRotation:
+                                HandlePlayerRotation(packetContent, client);
+                                break;
+                            case (ushort)CSTypes.playerStateChange:
+                                HandlePlayerState(packetContent, client);
+                                break;
+                        }
+
+                    }
                 }
             }
-            clients.Remove(client);
-            client.client.Client.Shutdown(SocketShutdown.Both);
-            client.client.Close();
+            catch (SocketException e)
+            {
+                Console.WriteLine("Removing client");
+                clients.Remove(client);
+                client.client.Client.Shutdown(SocketShutdown.Both);
+                client.client.Close();
+            }
 
         }
     }
