@@ -15,7 +15,7 @@ namespace MultiplayerAssets
         public GameObject playerPrefab;
 
 
-        List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
+        public List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
         public class Client
         {
             public ushort id;
@@ -85,6 +85,7 @@ namespace MultiplayerAssets
                 }
                 else
                 {
+                    client.lerper.timer = 0;
                     client.lerper.startPos = positions[^2].Item2;
                     client.lerper.targetPos = positions[^1].Item2;
                 }

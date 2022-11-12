@@ -6,16 +6,15 @@ public class Lerper : MonoBehaviour
 {
     public GameObject player;
     public Vector3 startPos, targetPos;
-    float timer = 0;
-
-    float _speed = 0.5f;
+    public float timer = 0;
+    public float time = 0.008f;
 
     // Update is called once per frame
     void Update()
     {
         if (player != null && startPos != null && targetPos != null)
         {
-            player.transform.position = Vector3.Lerp(startPos, targetPos, timer / (float)0.008);
+            player.transform.position = Vector3.Lerp(startPos, targetPos, timer / time);
             timer += Time.deltaTime;
         }
     }

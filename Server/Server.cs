@@ -50,7 +50,6 @@ namespace CoolNameSpace
 
                 while (true)
                 {
-                    Console.WriteLine("Waiting for a connection... ");
 
                     TcpClient client = server.AcceptTcpClient();
 
@@ -72,10 +71,6 @@ namespace CoolNameSpace
             List<byte> packet = new List<byte>();
 
             ushort packetLength = (ushort)(data.Length);
-            if (packetType == (ushort)CSTypes.playerRotation)
-            {
-                Console.WriteLine(data.Length);
-            }
 
             packet.AddRange(BitConverter.GetBytes(packetType));
             packet.AddRange(BitConverter.GetBytes(packetLength));
@@ -105,7 +100,6 @@ namespace CoolNameSpace
                 foreach (byte[] _packet in client.packetQueue)
                 {
                     client.stream.Write(_packet, 0, _packet.Length);
-                    Console.WriteLine("Sent package");
                 }
                 client.packetQueue.Clear();
             }
@@ -246,7 +240,6 @@ namespace CoolNameSpace
                 {
                     if (client.stream.CanRead & client.stream.DataAvailable)
                     {
-                        Console.WriteLine("Listening for packages...");
 
                         //Storlek av en ushort: 2 bytes
                         byte[] buffer = new byte[2];
@@ -259,7 +252,6 @@ namespace CoolNameSpace
                         byte[] packetContent = new byte[packetLength];
                         int bytes = client.stream.Read(packetContent, 0, packetContent.Length);
 
-                        Console.WriteLine("packetType: " + packetType + " with length " + packetLength);
                         switch (packetType)
                         {
                             case (ushort)CSTypes.playerPosition:
