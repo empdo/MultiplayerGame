@@ -239,6 +239,7 @@ namespace CoolNameSpace
 
             OnJoin(client);
 
+
             try
             {
                 while (_client.Client.Connected)

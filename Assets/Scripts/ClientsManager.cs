@@ -13,10 +13,15 @@ namespace MultiplayerAssets
     public class ClientsManager : MonoBehaviour
     {
         public GameObject playerPrefab;
+
+
+        List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
         public class Client
         {
             public ushort id;
             public Vector3 position;
+
+            public Lerper lerper;
 
             public GameObject player;
 
@@ -39,7 +44,12 @@ namespace MultiplayerAssets
         {
             GameObject player = Instantiate(playerPrefab, position, Quaternion.identity);
 
-            clients.Add(new Client(id, position, player));
+            Client client = new Client(id, position, player);
+            client.lerper = client.player.GetComponent(typeof(Lerper)) as Lerper;
+            client.lerper.player = player;
+
+            clients.Add(client);
+
 
             Debug.Log("Instantiate player at:" + position);
         }
@@ -60,11 +70,25 @@ namespace MultiplayerAssets
         {
             Client? client = clients.Find(client => client.id == id);
 
-            Debug.Log("Move client with id " + id + "To" + position);
 
-            if (client != null)
+            positionPacketBuffer.Add((id, position));
+
+            if (client != null && client.lerper != null)
             {
-                client.player.transform.position = position;
+                List<(ushort, Vector3)> positions = positionPacketBuffer.Where(packet => packet.Item1 == id).ToList();
+
+                if (positions.Count() == 1)
+                {
+
+                    client.player.transform.position = position;
+
+                }
+                else
+                {
+                    client.lerper.startPos = positions[^2].Item2;
+                    client.lerper.targetPos = positions[^1].Item2;
+                }
+
             }
             else
             {

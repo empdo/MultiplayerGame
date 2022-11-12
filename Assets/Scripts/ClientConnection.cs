@@ -33,27 +33,29 @@ namespace MultiplayerAssets
     public class ClientConnection : MonoBehaviour
     {
         public int port = 13000;
-        public string IpAddress = "83.227.32.208";
+        public string IpAddress = "127.0.0.1";
         static TcpClient client;
         static NetworkStream stream;
         public GameObject playerPrefab;
 
         public GameObject localPlayerPrefab;
-        public GameObject localPlayer;
+        GameObject localPlayer;
 
         Vector3 oldpos;
-        float oldRot;
 
-        private int currentTickRate = 8;
+        float oldRot;
+        int currentTickRate = 8;
+
         StopWatch sw = new StopWatch();
 
         public ClientsManager clientsManager;
 
         Queue<byte[]> packetQueue = new Queue<byte[]>();
 
-        private ushort serverTick;
+        ushort serverTick;
 
         public UIManager _UIManager;
+
 
         public static object _lock = new object();
         void Start()
@@ -121,7 +123,6 @@ namespace MultiplayerAssets
                         break;
                     case (ushort)CSTypes.playerPosition:
                         PlayerPosition(packetContent);
-
                         break;
                     case (ushort)CSTypes.playerRotation:
                         PlayerRotation(packetContent);
@@ -140,7 +141,7 @@ namespace MultiplayerAssets
                 currentTickRate = (int)sw.ElapsedMilliseconds;
             }
 
-            _UIManager.pingText.text = "Tickrate:" + currentTickRate + " ms\nPing: " + (int)currentTickRate / 8;
+            _UIManager.pingText.text = "Tickrate :" + currentTickRate;
 
             sw.Reset();
             sw.Start();
