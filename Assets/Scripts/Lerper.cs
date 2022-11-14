@@ -5,8 +5,9 @@ using UnityEngine;
 public class Lerper : MonoBehaviour
 {
     public GameObject player;
-    float timer = 0;
-    float time;
+    float timer = 0f;
+    float _timer = 0f;
+    public float time = 8f;
     public Vector3 startPos;
 
     Vector3 _targetPos;
@@ -16,7 +17,7 @@ public class Lerper : MonoBehaviour
         set
         {
             _targetPos = value;
-            time = timer;
+            Debug.Log(timer);
             timer = 0;
 
             velocity = (_targetPos - startPos) / time;
@@ -27,12 +28,15 @@ public class Lerper : MonoBehaviour
 
     }
     Vector3 velocity;
+
     // Update is called once per frame
     void Update()
     {
         if (player != null && velocity != null)
         {
             timer += Time.deltaTime;
+            _timer += Time.deltaTime;
+
             if (timer <= time)
             {
                 player.transform.position = startPos + velocity * timer;

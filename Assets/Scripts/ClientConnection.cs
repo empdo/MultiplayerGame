@@ -44,7 +44,7 @@ namespace MultiplayerAssets
         Vector3 oldpos;
 
         float oldRot;
-        int currentTickRate = 8;
+        float currentTickRate = 8;
 
         StopWatch sw = new StopWatch();
 
@@ -81,6 +81,11 @@ namespace MultiplayerAssets
         void FixedUpdate()
         {
             RunProcessData();
+        }
+
+        void Update()
+        {
+            currentTickRate += Time.deltaTime;
         }
         void RunProcessData()
         {
@@ -119,6 +124,7 @@ namespace MultiplayerAssets
                 {
                     case (ushort)CSTypes.ping:
                         OnTick();
+                        Debug.Log(BitConverter.ToString(packetContent, 0, packetLength));
                         break;
                     case (ushort)CSTypes.playerPosition:
                         PlayerPosition(packetContent);
@@ -133,21 +139,13 @@ namespace MultiplayerAssets
 
         void OnTick()
         {
-            sw.Stop();
-
-            if (serverTick % 125 == 0)
-            {
-                currentTickRate = (int)sw.ElapsedMilliseconds;
-            }
-
-            _UIManager.pingText.text = "Tickrate :" + currentTickRate;
-
-            sw.Reset();
-            sw.Start();
-
 
             if (localPlayer && oldpos != localPlayer.transform.position)
             {
+                clientsManager.tickRate = currentTickRate;
+                _UIManager.pingText.text = "Tickrate :" + currentTickRate;
+                currentTickRate = 0;
+
                 positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
                 oldpos = localPlayer.transform.position;
             }

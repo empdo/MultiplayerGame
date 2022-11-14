@@ -16,6 +16,7 @@ namespace MultiplayerAssets
 
         public List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
         public List<Client> clients = new List<Client>();
+        public float tickRate;
         public class Client
         {
             public ushort id;
@@ -85,6 +86,7 @@ namespace MultiplayerAssets
                 }
                 else
                 {
+                    client.lerper.time = tickRate;
                     client.lerper.startPos = positions[^2].Item2;
                     client.lerper.targetPos = positions[^1].Item2;
 

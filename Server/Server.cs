@@ -93,8 +93,6 @@ namespace CoolNameSpace
             //Tickrate 125, intervall på 8ms
             currentTick++;
 
-
-
             byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
             foreach (Client client in clients.Keys)
             {
