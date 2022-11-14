@@ -14,8 +14,8 @@ namespace MultiplayerAssets
     {
         public GameObject playerPrefab;
 
-
         public List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
+        public List<Client> clients = new List<Client>();
         public class Client
         {
             public ushort id;
@@ -33,11 +33,14 @@ namespace MultiplayerAssets
             }
 
         }
-        public List<Client> clients = new List<Client>();
 
-        void start()
+        void Start()
         {
             Debug.Log("Start");
+        }
+
+        void Update()
+        {
         }
 
         public void HandleNewPlayer(ushort id, Vector3 position)
@@ -70,7 +73,6 @@ namespace MultiplayerAssets
         {
             Client? client = clients.Find(client => client.id == id);
 
-
             positionPacketBuffer.Add((id, position));
 
             if (client != null && client.lerper != null)
@@ -79,15 +81,13 @@ namespace MultiplayerAssets
 
                 if (positions.Count() == 1)
                 {
-
                     client.player.transform.position = position;
-
                 }
                 else
                 {
-                    client.lerper.timer = 0;
                     client.lerper.startPos = positions[^2].Item2;
                     client.lerper.targetPos = positions[^1].Item2;
+
                 }
 
             }
@@ -95,6 +95,8 @@ namespace MultiplayerAssets
             {
                 HandleNewPlayer(id, position);
             }
+
+
         }
     }
 }

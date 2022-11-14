@@ -93,7 +93,6 @@ namespace MultiplayerAssets
 
         void ProcessData()
         {
-            Debug.Log("ProcessData!");
             //TODO: Check stream.Length edge case
             int streamLength = 4096;
             byte[] streamBuffer = new byte[streamLength];

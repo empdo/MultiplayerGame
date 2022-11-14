@@ -93,9 +93,15 @@ namespace CoolNameSpace
             //Tickrate 125, intervall på 8ms
             currentTick++;
 
+
+
             byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
             foreach (Client client in clients.Keys)
             {
+                if (currentTick % 625 == 0)
+                {
+                    Console.WriteLine("tick");
+                }
                 client.stream.Write(packet, 0, packet.Length);
                 foreach (byte[] _packet in client.packetQueue)
                 {
@@ -215,7 +221,6 @@ namespace CoolNameSpace
             {
                 if (client != _client)
                 {
-
                     byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, PositionToBytes(new float[] { _client.x, _client.y, _client.z }, _client.id));
                     client.packetQueue.Enqueue(packet);
                 }
@@ -234,48 +239,46 @@ namespace CoolNameSpace
             OnJoin(client);
 
 
-            try
+            //try
+            //{
+            while (_client.Client.Connected)
             {
-                while (_client.Client.Connected)
+                if (client.stream.CanRead & client.stream.DataAvailable)
                 {
-                    if (client.stream.CanRead & client.stream.DataAvailable)
+                    //Storlek av en ushort: 2 bytes
+                    byte[] buffer = new byte[2];
+                    client.stream.Read(buffer, 0, buffer.Length);
+                    ushort packetType = BitConverter.ToUInt16(buffer, 0);
+
+                    client.stream.Read(buffer, 0, buffer.Length);
+                    ushort packetLength = BitConverter.ToUInt16(buffer, 0);
+
+                    byte[] packetContent = new byte[packetLength];
+                    int bytes = client.stream.Read(packetContent, 0, packetContent.Length);
+
+                    switch (packetType)
                     {
-
-                        //Storlek av en ushort: 2 bytes
-                        byte[] buffer = new byte[2];
-                        client.stream.Read(buffer, 0, buffer.Length);
-                        ushort packetType = BitConverter.ToUInt16(buffer, 0);
-
-                        client.stream.Read(buffer, 0, buffer.Length);
-                        ushort packetLength = BitConverter.ToUInt16(buffer, 0);
-
-                        byte[] packetContent = new byte[packetLength];
-                        int bytes = client.stream.Read(packetContent, 0, packetContent.Length);
-
-                        switch (packetType)
-                        {
-                            case (ushort)CSTypes.playerPosition:
-                                HandlePlayerPosition(packetContent, client);
-                                break;
-                            case (ushort)CSTypes.playerRotation:
-                                HandlePlayerRotation(packetContent, client);
-                                break;
-                            case (ushort)CSTypes.playerStateChange:
-                                HandlePlayerState(packetContent, client);
-                                break;
-                        }
+                        case (ushort)CSTypes.playerPosition:
+                            HandlePlayerPosition(packetContent, client);
+                            break;
+                        case (ushort)CSTypes.playerRotation:
+                            HandlePlayerRotation(packetContent, client);
+                            break;
+                        case (ushort)CSTypes.playerStateChange:
+                            HandlePlayerState(packetContent, client);
+                            break;
                     }
                 }
             }
-            catch (SocketException e)
-            {
-                Console.WriteLine("Removing client");
-                clients.Remove(client);
-                client.client.Client.Shutdown(SocketShutdown.Both);
-                client.client.Close();
-            }
-
         }
-    }
+        // catch (SocketException e)
+        // {
+        //     Console.WriteLine("Removing client");
+        //     clients.Remove(client);
+        //     client.client.Client.Shutdown(SocketShutdown.Both);
+        //     client.client.Close();
+        // }
 
+    }
 }
+
