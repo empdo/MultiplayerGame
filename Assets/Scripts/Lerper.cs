@@ -7,7 +7,7 @@ public class Lerper : MonoBehaviour
     public GameObject player;
     float timer = 0f;
     float _timer = 0f;
-    public float time = 8f;
+    public float time = 0.008f;
     public Vector3 startPos;
 
     Vector3 _targetPos;
@@ -17,7 +17,7 @@ public class Lerper : MonoBehaviour
         set
         {
             _targetPos = value;
-            Debug.Log(timer);
+            Debug.Log("timer:" + timer);
             timer = 0;
 
             velocity = (_targetPos - startPos) / time;
@@ -30,12 +30,11 @@ public class Lerper : MonoBehaviour
     Vector3 velocity;
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         if (player != null && velocity != null)
         {
-            timer += Time.deltaTime;
-            _timer += Time.deltaTime;
+            timer += Time.fixedDeltaTime;
 
             if (timer <= time)
             {

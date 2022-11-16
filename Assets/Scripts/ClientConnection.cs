@@ -56,7 +56,6 @@ namespace MultiplayerAssets
 
         public UIManager _UIManager;
 
-
         public static object _lock = new object();
         void Start()
         {
@@ -124,7 +123,6 @@ namespace MultiplayerAssets
                 {
                     case (ushort)CSTypes.ping:
                         OnTick();
-                        Debug.Log(BitConverter.ToString(packetContent, 0, packetLength));
                         break;
                     case (ushort)CSTypes.playerPosition:
                         PlayerPosition(packetContent);
@@ -139,12 +137,12 @@ namespace MultiplayerAssets
 
         void OnTick()
         {
+            clientsManager.tickRate = currentTickRate;
+            _UIManager.pingText.text = "Tickrate :" + currentTickRate;
+            currentTickRate = 0;
 
             if (localPlayer && oldpos != localPlayer.transform.position)
             {
-                clientsManager.tickRate = currentTickRate;
-                _UIManager.pingText.text = "Tickrate :" + currentTickRate;
-                currentTickRate = 0;
 
                 positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
                 oldpos = localPlayer.transform.position;

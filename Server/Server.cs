@@ -36,6 +36,7 @@ namespace CoolNameSpace
     {
         static Dictionary<Client, int> clients = new Dictionary<Client, int>();
         ushort currentTick = 0;
+
         public void StartServer()
         {
             StartTimer();
@@ -124,6 +125,7 @@ namespace CoolNameSpace
 
         public byte[] PositionToBytes(float[] position, ushort id)
         {
+
             List<byte> packet = new List<byte>();
 
             byte[] xpos = BitConverter.GetBytes(position[0]);
