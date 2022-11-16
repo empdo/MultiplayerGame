@@ -86,7 +86,7 @@ namespace MultiplayerAssets
                 }
                 else
                 {
-                    client.lerper.time = tickRate;
+                    client.lerper.time = 0.008f;
                     client.lerper.startPos = positions[^2].Item2;
                     client.lerper.targetPos = positions[^1].Item2;
 

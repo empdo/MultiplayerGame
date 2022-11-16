@@ -44,7 +44,7 @@ namespace MultiplayerAssets
         Vector3 oldpos;
 
         float oldRot;
-        float currentTickRate = 8;
+        float currentTickRate;
 
         StopWatch sw = new StopWatch();
 
@@ -73,19 +73,29 @@ namespace MultiplayerAssets
 
             localPlayer = Instantiate(localPlayerPrefab, new Vector3(0, 5, 0), Quaternion.identity);
 
-            localPlayer.GetComponent<StarterAssets.StarterAssetsInputs>().cursorLocked = true;
 
         }
 
         void FixedUpdate()
         {
+            currentTickRate += Time.fixedDeltaTime;
             RunProcessData();
+
+            //            if (stream != null && client != null && currentTickRate > 2)
+            //            {
+            //
+            //                Debug.Log("Server closed");
+            //
+            //                client.Close();
+            //
+            //                _UIManager.UIState = true;
+            //                stream = null;
+            //                client = null;
+            //
+            //                Destroy(localPlayer);
+            //            }
         }
 
-        void Update()
-        {
-            currentTickRate += Time.deltaTime;
-        }
         void RunProcessData()
         {
             if (stream != null && stream.DataAvailable)
@@ -98,7 +108,7 @@ namespace MultiplayerAssets
         void ProcessData()
         {
             //TODO: Check stream.Length edge case
-            int streamLength = 4096;
+            int streamLength = 32000;
             byte[] streamBuffer = new byte[streamLength];
             stream.Read(streamBuffer, 0, (int)streamLength);
             PacketStream result = new PacketStream(streamBuffer);
@@ -138,10 +148,12 @@ namespace MultiplayerAssets
         void OnTick()
         {
             clientsManager.tickRate = currentTickRate;
+
             _UIManager.pingText.text = "Tickrate :" + currentTickRate;
             currentTickRate = 0;
 
-            if (localPlayer && oldpos != localPlayer.transform.position)
+
+            if (localPlayer != null && oldpos != localPlayer.transform.position)
             {
 
                 positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
@@ -150,7 +162,7 @@ namespace MultiplayerAssets
 
             float rotation = localPlayer.transform.localRotation.eulerAngles.y;
 
-            if (localPlayer && oldRot != rotation) ;
+            if (localPlayer != null && oldRot != rotation) ;
             {
                 RotationToPacket(rotation, (ushort)CSTypes.playerRotation);
                 oldRot = rotation;

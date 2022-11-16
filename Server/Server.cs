@@ -34,7 +34,8 @@ namespace CoolNameSpace
     }
     public class Server
     {
-        static Dictionary<Client, int> clients = new Dictionary<Client, int>();
+        static object _lock = new object();
+        static Dictionary<int, Client> clients = new Dictionary<int, Client>();
         ushort currentTick = 0;
 
         public void StartServer()
@@ -49,13 +50,20 @@ namespace CoolNameSpace
                 server = new TcpListener(localAddr, port);
                 server.Start();
 
+                int count = 1;
+
                 while (true)
                 {
 
                     TcpClient client = server.AcceptTcpClient();
 
-                    Thread thread = new Thread(() => clientHandler(client));
+                    Client _client = new Client(client, count);
+                    lock (_lock) { clients.Add(count, _client); }
+
+                    Thread thread = new Thread(() => clientHandler(count));
                     thread.Start();
+
+                    count++;
                 }
             }
             catch (SocketException e)
@@ -95,7 +103,7 @@ namespace CoolNameSpace
             currentTick++;
 
             byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
-            foreach (Client client in clients.Keys)
+            foreach (Client client in clients.Values)
             {
                 if (currentTick % 625 == 0)
                 {
@@ -143,11 +151,14 @@ namespace CoolNameSpace
 
         public void SendToAllOther(Client client, byte[] packet)
         {
-            foreach (Client _client in clients.Keys)
+            lock (client)
             {
-                if (_client.id != client.id)
+                foreach (Client _client in clients.Values)
                 {
-                    _client.packetQueue.Enqueue(packet);
+                    if (_client.id != client.id)
+                    {
+                        _client.packetQueue.Enqueue(packet);
+                    }
                 }
             }
 
@@ -155,93 +166,103 @@ namespace CoolNameSpace
 
         public void HandlePlayerState(byte[] packetContent, Client client)
         {
-            List<byte> bytes = new List<byte>();
-
-            ushort _state = BitConverter.ToUInt16(packetContent);
-
-            CoolNameSpace.PlayerStates state;
-
-            if (Enum.IsDefined(typeof(CoolNameSpace.PlayerStates), _state))
+            lock (client)
             {
-                state = (CoolNameSpace.PlayerStates)_state;
+                List<byte> bytes = new List<byte>();
+
+                ushort _state = BitConverter.ToUInt16(packetContent);
+
+                CoolNameSpace.PlayerStates state;
+
+                if (Enum.IsDefined(typeof(CoolNameSpace.PlayerStates), _state))
+                {
+                    state = (CoolNameSpace.PlayerStates)_state;
+                }
+                else
+                {
+                    return;
+                }
+
+                client.playerState = state;
+
+
+                byte[] stateBytes = BitConverter.GetBytes((ushort)client.playerState);
+                byte[] idBytes = BitConverter.GetBytes(client.id);
+
+                bytes.AddRange(idBytes);
+                bytes.AddRange(stateBytes);
+
+                byte[] packet = ConstructPackage((ushort)CSTypes.playerStateChange, bytes.ToArray());
+
+
+                SendToAllOther(client, packet);
             }
-            else
-            {
-                return;
-            }
-
-            client.playerState = state;
-
-
-            byte[] stateBytes = BitConverter.GetBytes((ushort)client.playerState);
-            byte[] idBytes = BitConverter.GetBytes(client.id);
-
-            bytes.AddRange(idBytes);
-            bytes.AddRange(stateBytes);
-
-            byte[] packet = ConstructPackage((ushort)CSTypes.playerStateChange, bytes.ToArray());
-
-
-            SendToAllOther(client, packet);
         }
         public void HandlePlayerPosition(byte[] packetContent, Client client)
         {
-            float[] position = byteToPosition(packetContent);
-            client.UpdatePosition(position);
+            lock (client)
+            {
+                float[] position = byteToPosition(packetContent);
+                client.UpdatePosition(position);
 
-            byte[] bytes = PositionToBytes(new float[3] { client.x, client.y, client.z }, client.id);
-            byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, bytes);
+                byte[] bytes = PositionToBytes(new float[3] { client.x, client.y, client.z }, client.id);
+                byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, bytes);
 
-            SendToAllOther(client, packet);
+                SendToAllOther(client, packet);
+            }
         }
 
         public void HandlePlayerRotation(byte[] packetContent, Client client)
         {
+            lock (client)
+            {
 
-            List<byte> bytes = new List<byte>();
+                List<byte> bytes = new List<byte>();
 
-            float rotation = BitConverter.ToSingle(packetContent);
-            client.rotation = rotation;
+                float rotation = BitConverter.ToSingle(packetContent);
+                client.rotation = rotation;
 
-            byte[] rotationBytes = BitConverter.GetBytes(client.rotation);
-            byte[] idBytes = BitConverter.GetBytes(client.id);
+                byte[] rotationBytes = BitConverter.GetBytes(client.rotation);
+                byte[] idBytes = BitConverter.GetBytes(client.id);
 
-            bytes.AddRange(idBytes);
-            bytes.AddRange(rotationBytes);
+                bytes.AddRange(idBytes);
+                bytes.AddRange(rotationBytes);
 
-            byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, bytes.ToArray());
+                byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, bytes.ToArray());
 
 
-            SendToAllOther(client, packet);
+                SendToAllOther(client, packet);
+            }
         }
 
         void OnJoin(Client client)
         {
-            foreach (Client _client in clients.Keys)
+            lock (client)
             {
-                if (client != _client)
+
+                foreach (Client _client in clients.Values)
                 {
-                    byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, PositionToBytes(new float[] { _client.x, _client.y, _client.z }, _client.id));
-                    client.packetQueue.Enqueue(packet);
+                    if (client != _client)
+                    {
+                        byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, PositionToBytes(new float[] { _client.x, _client.y, _client.z }, _client.id));
+                        client.packetQueue.Enqueue(packet);
+                    }
                 }
             }
         }
 
-        public void clientHandler(TcpClient _client)
+        public void clientHandler(object count)
         {
-            Console.WriteLine("Connection established from: " + _client.Client.RemoteEndPoint);
 
             //Skapa en instans av klienten 
-            int _id = clients.Count + 1;
-            Client client = new Client(_client, _id);
-            clients.Add(client, _id);
+            Client client;
+            lock (_lock) { client = clients[(int)count - 1]; }
 
             OnJoin(client);
 
-
             //try
             //{
-            while (_client.Client.Connected)
+            while (client.client.Client.Connected)
             {
                 if (client.stream.CanRead & client.stream.DataAvailable)
                 {
@@ -270,13 +291,14 @@ namespace CoolNameSpace
                     }
                 }
             }
+            Console.WriteLine("Removing client");
+            lock (_lock) clients.Remove((int)count);
+            client.client.Client.Shutdown(SocketShutdown.Both);
+            client.client.Close();
         }
+
         // catch (SocketException e)
         // {
-        //     Console.WriteLine("Removing client");
-        //     clients.Remove(client);
-        //     client.client.Client.Shutdown(SocketShutdown.Both);
-        //     client.client.Close();
         // }
 
     }
