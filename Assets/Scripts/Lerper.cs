@@ -32,7 +32,7 @@ public class Lerper : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (player != null && velocity != null && time != null)
+        if (player != null && velocity != null)
         {
             timer += Time.fixedDeltaTime;
 

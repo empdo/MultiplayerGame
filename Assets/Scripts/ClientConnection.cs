@@ -19,9 +19,12 @@ namespace MultiplayerAssets
     public enum CSTypes
     {
         ping = 1,
+        playerId,
+
         playerJoin,
         playerPosition,
         playerRotation,
+        playerStateChange,
     }
     public enum SCTypes
     {
@@ -32,15 +35,18 @@ namespace MultiplayerAssets
 
     public class ClientConnection : MonoBehaviour
     {
+        public ClientConnection instance;
         public int port = 13000;
         public string IpAddress = "127.0.0.1";
+
+        public Udp udp;
         static TcpClient client;
         static NetworkStream stream;
         public GameObject playerPrefab;
-
         public GameObject localPlayerPrefab;
         GameObject localPlayer;
 
+        public ushort playerId;
         Vector3 oldpos;
 
         float oldRot;
@@ -59,7 +65,7 @@ namespace MultiplayerAssets
         public static object _lock = new object();
         void Start()
         {
-
+            instance = this;
             _UIManager.submitButton.onClick.AddListener(Connect);
             serverTick = 2;
         }
@@ -69,11 +75,25 @@ namespace MultiplayerAssets
             client = new TcpClient(IpAddress, port);
             stream = client.GetStream();
 
+            udp = new Udp(instance);
+
             _UIManager.UIState = false;
 
             localPlayer = Instantiate(localPlayerPrefab, new Vector3(0, 5, 0), Quaternion.identity);
 
+        }
 
+
+        public void SetIP(string value)
+        {
+            IpAddress = value;
+            Debug.Log(value);
+        }
+
+        public void SetPort(string value)
+        {
+            port = Int32.Parse(value);
+            Debug.Log(port);
         }
 
         void FixedUpdate()
@@ -81,19 +101,6 @@ namespace MultiplayerAssets
             currentTickRate += Time.fixedDeltaTime;
             RunProcessData();
 
-            //            if (stream != null && client != null && currentTickRate > 2)
-            //            {
-            //
-            //                Debug.Log("Server closed");
-            //
-            //                client.Close();
-            //
-            //                _UIManager.UIState = true;
-            //                stream = null;
-            //                client = null;
-            //
-            //                Destroy(localPlayer);
-            //            }
         }
 
         void RunProcessData()
@@ -134,15 +141,18 @@ namespace MultiplayerAssets
                     case (ushort)CSTypes.ping:
                         OnTick();
                         break;
-                    case (ushort)CSTypes.playerPosition:
-                        PlayerPosition(packetContent);
-                        break;
-                    case (ushort)CSTypes.playerRotation:
-                        PlayerRotation(packetContent);
+                    case (ushort)CSTypes.playerId:
+                        HandlePlayerId(packetContent);
                         break;
                 }
 
             }
+        }
+
+        void HandlePlayerId(byte[] data) {
+            playerId = BitConverter.ToUInt16(data);
+
+            udp.Connect(port);
         }
 
         void OnTick()
@@ -162,13 +172,20 @@ namespace MultiplayerAssets
 
             float rotation = localPlayer.transform.localRotation.eulerAngles.y;
 
-            if (localPlayer != null && oldRot != rotation) ;
+            if (localPlayer != null && oldRot != rotation) 
             {
                 RotationToPacket(rotation, (ushort)CSTypes.playerRotation);
                 oldRot = rotation;
             }
 
 
+            if (udp.connected) {
+                foreach (byte[] packet in udp.packetQueue) {
+                    udp.client.Send(packet, packet.Length);
+                }
+
+                udp.packetQueue.Clear();
+            }
 
             if (packetQueue.Count > 0)
             {
@@ -183,17 +200,6 @@ namespace MultiplayerAssets
 
         }
 
-        public void SetIP(string value)
-        {
-            IpAddress = value;
-            Debug.Log(value);
-        }
-
-        public void SetPort(string value)
-        {
-            port = Int32.Parse(value);
-            Debug.Log(port);
-        }
 
         public byte[] ConstructPackage(ushort packetType, byte[] data)
         {
@@ -213,7 +219,7 @@ namespace MultiplayerAssets
 
             byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, _rotation);
 
-            packetQueue.Enqueue(packet);
+            udp.QueuePacket(packet, playerId);
         }
 
         void positionToPacket(Vector3 position, ushort type)
@@ -233,7 +239,116 @@ namespace MultiplayerAssets
             packet.AddRange(ypos);
             packet.AddRange(zpos);
 
+            udp.QueuePacket(packet.ToArray(), playerId);
+        }
+
+
+        void HandleTickSync(byte[] packetContent)
+        {
+            ushort tick = BitConverter.ToUInt16(packetContent);
+
+            if (serverTick != tick)
+            {
+                Debug.Log("Synced tick, from: " + serverTick + " to " + tick);
+                serverTick = tick;
+            }
+
+        }
+
+
+    }
+
+    public class Udp {
+        public UdpClient client;
+        public IPEndPoint endpoint;
+
+        public bool connected = false;
+        ClientConnection instance;
+
+
+        public Queue<byte[]> packetQueue = new Queue<byte[]>();
+        public Udp(ClientConnection _instance) {
+            instance = _instance;
+            endpoint = new IPEndPoint(IPAddress.Parse(instance.IpAddress), instance.port);;
+        }
+
+        public void Connect(int _port) {
+            client = new UdpClient(_port + 7);
+
+            client.Connect(endpoint);
+            client.BeginReceive(ReceiveCallback, null);
+
+            connected = true;
+            Debug.Log("Udp connection established");
+
+        }
+
+        void ReceiveCallback(IAsyncResult _result)
+        {
+            try
+            {
+                byte[] _data = client.EndReceive(_result, ref endpoint);
+                client.BeginReceive(ReceiveCallback, null);
+
+                if (_data.Length < 4)
+                {
+                    return;
+                }
+
+                HandleData(_data);
+            }
+            catch
+            {
+                Debug.Log("Error on Callback");
+            }
+        }
+
+        public void QueuePacket(byte[] _packet, ushort id) {
+            List<byte> packet = new List<byte>();
+            packet.AddRange(BitConverter.GetBytes(id));
+            packet.AddRange(_packet);
+
             packetQueue.Enqueue(packet.ToArray());
+
+        }
+
+        void HandleData(byte[] data) {
+            int streamLength = data.Length;
+            PacketStream result = new PacketStream(data);
+
+                ushort packetType = result.ReadUShort();
+
+                if (packetType == 0)
+                {
+                    return;
+                }
+
+                ushort packetLength = result.ReadUShort();
+
+                byte[] packetContent = result.ReadContent(packetLength);
+
+                Debug.Log("packetType: " + packetType);
+                
+                switch (packetType)
+                {
+                    case (ushort)CSTypes.playerPosition:
+                        PlayerPosition(packetContent);
+                        break;
+                    case (ushort)CSTypes.playerRotation:
+                        PlayerRotation(packetContent);
+                        break;
+                }
+
+
+        }
+
+        Tuple<ushort, float> ReadPlayerRotation(byte[] bytes)
+        {
+            ushort id = BitConverter.ToUInt16(bytes, 0);
+
+            float rotation = BitConverter.ToSingle(bytes, sizeof(ushort));
+
+            return Tuple.Create<ushort, float>(id, rotation);
         }
 
         Tuple<ushort?, Vector3> byteToPosition(byte[] bytes, int type)
@@ -253,28 +368,6 @@ namespace MultiplayerAssets
 
             return Tuple.Create<ushort?, Vector3>(id, new Vector3(xpos, ypos, zpos));
         }
-
-        void HandleTickSync(byte[] packetContent)
-        {
-            ushort tick = BitConverter.ToUInt16(packetContent);
-
-            if (serverTick != tick)
-            {
-                Debug.Log("Synced tick, from: " + serverTick + " to " + tick);
-                serverTick = tick;
-            }
-
-        }
-
-        Tuple<ushort, float> ReadPlayerRotation(byte[] bytes)
-        {
-            ushort id = BitConverter.ToUInt16(bytes, 0);
-
-            float rotation = BitConverter.ToSingle(bytes, sizeof(ushort));
-
-            return Tuple.Create<ushort, float>(id, rotation);
-        }
-
         void PlayerPosition(byte[] packetContent)
         {
             Tuple<ushort?, Vector3> response = byteToPosition(packetContent, 1);
@@ -284,7 +377,7 @@ namespace MultiplayerAssets
                 ushort id = (ushort)response.Item1;
                 Vector3 position = response.Item2;
 
-                clientsManager.PlayerPosition(id, position);
+                instance.clientsManager.PlayerPosition(id, position);
             }
         }
 
@@ -292,7 +385,7 @@ namespace MultiplayerAssets
         {
             Tuple<ushort, float> response = ReadPlayerRotation(packetContent);
 
-            clientsManager.PlayerRotation((ushort)response.Item1, response.Item2);
+            instance.clientsManager.PlayerRotation((ushort)response.Item1, response.Item2);
         }
 
     }

@@ -6,59 +6,59 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Timers;
+using System.Linq;
 
 namespace CoolNameSpace
 {
 
-    public enum PlayerStates
-    {
-        Staning = 1,
-        RunningForward,
-        RunningBackwards,
-        WalkingForwards,
-        WalkingBackwards,
-
-    }
     public enum CSTypes
     {
         ping = 1,
+        playerId,
+
         playerJoin,
         playerPosition,
         playerRotation,
         playerStateChange,
     }
-    public enum SCTypes
-    {
-        ping = 1,
-        playerRotation,
-    }
     public class Server
     {
+        public Server instance;
         static object _lock = new object();
-        static Dictionary<int, Client> clients = new Dictionary<int, Client>();
+        public Dictionary<int, Client> clients = new Dictionary<int, Client>();
         ushort currentTick = 0;
 
+        TcpListener tcpServer;
+        UdpClient udpServer;
+
+        public Server()
+        {
+            instance = this;
+        }
         public void StartServer()
         {
             StartTimer();
-            TcpListener server = null;
             try
             {
                 Int32 port = 13000;
                 IPAddress localAddr = IPAddress.Parse("0.0.0.0");
 
-                server = new TcpListener(localAddr, port);
-                server.Start();
+                tcpServer = new TcpListener(localAddr, port);
+                tcpServer.Start();
+
+                udpServer = new UdpClient(port);
+                udpServer.BeginReceive(UDPReceiveCallback, null);
 
                 int count = 1;
 
                 while (true)
                 {
 
-                    TcpClient client = server.AcceptTcpClient();
-
-                    Client _client = new Client(client, count);
+                    TcpClient client = tcpServer.AcceptTcpClient();
+                    Client _client = new Client(client, count, instance);
                     lock (_lock) { clients.Add(count, _client); }
+
+                    Console.WriteLine("New connection");
 
                     Thread thread = new Thread(() => clientHandler(count));
                     thread.Start();
@@ -75,18 +75,46 @@ namespace CoolNameSpace
             Console.Read();
         }
 
-        public byte[] ConstructPackage(ushort packetType, byte[] data)
+        private void UDPReceiveCallback(IAsyncResult _result)
         {
-            List<byte> packet = new List<byte>();
+            try
+            {
+                IPEndPoint _endPoint = new IPEndPoint(IPAddress.Any, 0);
+                byte[] data = udpServer.EndReceive(_result, ref _endPoint);
+                udpServer.BeginReceive(UDPReceiveCallback, null);
 
-            ushort packetLength = (ushort)(data.Length);
+                if (data.Length < 4)
+                {
+                    return;
+                }
 
-            packet.AddRange(BitConverter.GetBytes(packetType));
-            packet.AddRange(BitConverter.GetBytes(packetLength));
-            packet.AddRange(data);
+                int clientId = BitConverter.ToUInt16(data, 0);
 
-            return packet.ToArray();
+                if (clientId == 0)
+                {
+                    return;
+                }
+
+                if (clients[clientId].udp.endpoint == null)
+                {
+                    Console.WriteLine("New Client");
+                    // If this is a new connection
+                    clients[clientId].udp.Connect(_endPoint);
+                    return;
+                }
+
+                if (clients[clientId].udp.endpoint.ToString() == _endPoint.ToString())
+                {
+                    clients[clientId].HandlePacket(data.Skip(sizeof(ushort)).ToArray());
+                }
+            }
+            catch (Exception _ex)
+            {
+                Console.WriteLine($"Error receiving UDP data: {_ex}");
+            }
         }
+
+
 
         public void StartTimer()
         {
@@ -103,52 +131,45 @@ namespace CoolNameSpace
             currentTick++;
 
             byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
+
             foreach (Client client in clients.Values)
             {
-                if (currentTick % 625 == 0)
+
+                if (client.udp.endpoint != null)
                 {
-                    Console.WriteLine("tick");
+
+                    udpServer.BeginSend(packet, packet.Length, client.udp.endpoint, null, null);
+                    foreach (byte[] _packet in client.udp.OutPacketQueue)
+                    {
+                        udpServer.BeginSend(_packet, _packet.Length, client.udp.endpoint, null, null);
+                    }
+
                 }
-                client.stream.Write(packet, 0, packet.Length);
-                foreach (byte[] _packet in client.packetQueue)
+                client.udp.OutPacketQueue.Clear();
+
+                client.tcp.stream.Write(packet, 0, packet.Length);
+                foreach (byte[] _packet in client.tcp.packetQueue)
                 {
-                    client.stream.Write(_packet, 0, _packet.Length);
+                    client.tcp.stream.Write(_packet, 0, _packet.Length);
                 }
-                client.packetQueue.Clear();
+                client.tcp.packetQueue.Clear();
             }
         }
 
-        float[] byteToPosition(byte[] bytes)
+
+
+        public byte[] ConstructPackage(ushort packetType, byte[] data)
         {
-
-            int offset = 0;
-            float xpos = BitConverter.ToSingle(bytes, 0);
-            offset += sizeof(float);
-            float ypos = BitConverter.ToSingle(bytes, offset);
-            offset += sizeof(float);
-            float zpos = BitConverter.ToSingle(bytes, offset);
-
-            return new float[3] { xpos, ypos, zpos };
-        }
-
-        public byte[] PositionToBytes(float[] position, ushort id)
-        {
-
             List<byte> packet = new List<byte>();
 
-            byte[] xpos = BitConverter.GetBytes(position[0]);
-            byte[] ypos = BitConverter.GetBytes(position[1]);
-            byte[] zpos = BitConverter.GetBytes(position[2]);
+            ushort packetLength = (ushort)(data.Length);
 
-            packet.AddRange(BitConverter.GetBytes((ushort)id));
-
-            packet.AddRange(xpos);
-            packet.AddRange(ypos);
-            packet.AddRange(zpos);
+            packet.AddRange(BitConverter.GetBytes(packetType));
+            packet.AddRange(BitConverter.GetBytes(packetLength));
+            packet.AddRange(data);
 
             return packet.ToArray();
         }
-
         public void SendToAllOther(Client client, byte[] packet)
         {
             lock (client)
@@ -157,149 +178,99 @@ namespace CoolNameSpace
                 {
                     if (_client.id != client.id)
                     {
-                        _client.packetQueue.Enqueue(packet);
+                        _client.tcp.packetQueue.Enqueue(packet);
                     }
                 }
             }
 
         }
 
-        public void HandlePlayerState(byte[] packetContent, Client client)
-        {
-            lock (client)
-            {
-                List<byte> bytes = new List<byte>();
+        //    public void HandlePlayerState(byte[] packetContent, Client client)
+        //    {
+        //        lock (client)
+        //        {
+        //            List<byte> bytes = new List<byte>();
 
-                ushort _state = BitConverter.ToUInt16(packetContent);
+        //            ushort _state = BitConverter.ToUInt16(packetContent);
 
-                CoolNameSpace.PlayerStates state;
+        //            CoolNameSpace.PlayerStates state;
 
-                if (Enum.IsDefined(typeof(CoolNameSpace.PlayerStates), _state))
-                {
-                    state = (CoolNameSpace.PlayerStates)_state;
-                }
-                else
-                {
-                    return;
-                }
+        //            if (Enum.IsDefined(typeof(CoolNameSpace.PlayerStates), _state))
+        //            {
+        //                state = (CoolNameSpace.PlayerStates)_state;
+        //            }
+        //            else
+        //            {
+        //                return;
+        //            }
 
-                client.playerState = state;
-
-
-                byte[] stateBytes = BitConverter.GetBytes((ushort)client.playerState);
-                byte[] idBytes = BitConverter.GetBytes(client.id);
-
-                bytes.AddRange(idBytes);
-                bytes.AddRange(stateBytes);
-
-                byte[] packet = ConstructPackage((ushort)CSTypes.playerStateChange, bytes.ToArray());
+        //            client.playerState = state;
 
 
-                SendToAllOther(client, packet);
-            }
-        }
-        public void HandlePlayerPosition(byte[] packetContent, Client client)
-        {
-            lock (client)
-            {
-                float[] position = byteToPosition(packetContent);
-                client.UpdatePosition(position);
+        //            byte[] stateBytes = BitConverter.GetBytes((ushort)client.playerState);
+        //            byte[] idBytes = BitConverter.GetBytes(client.id);
 
-                byte[] bytes = PositionToBytes(new float[3] { client.x, client.y, client.z }, client.id);
-                byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, bytes);
+        //            bytes.AddRange(idBytes);
+        //            bytes.AddRange(stateBytes);
 
-                SendToAllOther(client, packet);
-            }
-        }
-
-        public void HandlePlayerRotation(byte[] packetContent, Client client)
-        {
-            lock (client)
-            {
-
-                List<byte> bytes = new List<byte>();
-
-                float rotation = BitConverter.ToSingle(packetContent);
-                client.rotation = rotation;
-
-                byte[] rotationBytes = BitConverter.GetBytes(client.rotation);
-                byte[] idBytes = BitConverter.GetBytes(client.id);
-
-                bytes.AddRange(idBytes);
-                bytes.AddRange(rotationBytes);
-
-                byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, bytes.ToArray());
+        //            byte[] packet = ConstructPackage((ushort)CSTypes.playerStateChange, bytes.ToArray());
 
 
-                SendToAllOther(client, packet);
-            }
-        }
+        //            SendToAllOther(client, packet);
+        //        }
+        //    }
 
-        void OnJoin(Client client)
-        {
-            lock (client)
-            {
 
-                foreach (Client _client in clients.Values)
-                {
-                    if (client != _client)
-                    {
-                        byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, PositionToBytes(new float[] { _client.x, _client.y, _client.z }, _client.id));
-                        client.packetQueue.Enqueue(packet);
-                    }
-                }
-            }
-        }
+        //    void OnJoin(Client client)
+        //    {
+        //        lock (client)
+        //        {
+
+        //            foreach (Client _client in clients.Values)
+        //            {
+        //                if (client != _client)
+        //                {
+        //                    byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, PositionToBytes(new float[] { _client.x, _client.y, _client.z }, _client.id));
+        //                    client.tcp.packetQueue.Enqueue(packet);
+        //                }
+        //            }
+        //        }
+        //    }
 
         public void clientHandler(object count)
         {
-
-            //Skapa en instans av klienten 
             Client client;
-            lock (_lock) { client = clients[(int)count - 1]; }
+            lock (_lock) { client = clients[(int)count]; }
 
-            OnJoin(client);
+            byte[] byteId = BitConverter.GetBytes((ushort)(int)count);
 
-            //try
-            //{
-            while (client.client.Client.Connected)
+            client.tcp.packetQueue.Enqueue(ConstructPackage((ushort)CSTypes.playerId, byteId));
+
+            while (client.tcp.tcpClient.Client.Connected)
             {
-                if (client.stream.CanRead & client.stream.DataAvailable)
+                if (client.tcp.stream.CanRead & client.tcp.stream.DataAvailable)
                 {
                     //Storlek av en ushort: 2 bytes
                     byte[] buffer = new byte[2];
-                    client.stream.Read(buffer, 0, buffer.Length);
+                    client.tcp.stream.Read(buffer, 0, buffer.Length);
                     ushort packetType = BitConverter.ToUInt16(buffer, 0);
 
-                    client.stream.Read(buffer, 0, buffer.Length);
+                    client.tcp.stream.Read(buffer, 0, buffer.Length);
                     ushort packetLength = BitConverter.ToUInt16(buffer, 0);
 
                     byte[] packetContent = new byte[packetLength];
-                    int bytes = client.stream.Read(packetContent, 0, packetContent.Length);
+                    int bytes = client.tcp.stream.Read(packetContent, 0, packetContent.Length);
 
                     switch (packetType)
                     {
-                        case (ushort)CSTypes.playerPosition:
-                            HandlePlayerPosition(packetContent, client);
-                            break;
-                        case (ushort)CSTypes.playerRotation:
-                            HandlePlayerRotation(packetContent, client);
-                            break;
-                        case (ushort)CSTypes.playerStateChange:
-                            HandlePlayerState(packetContent, client);
-                            break;
                     }
                 }
             }
             Console.WriteLine("Removing client");
             lock (_lock) clients.Remove((int)count);
-            client.client.Client.Shutdown(SocketShutdown.Both);
-            client.client.Close();
+            client.tcp.tcpClient.Client.Shutdown(SocketShutdown.Both);
+            client.tcp.tcpClient.Close();
         }
-
-        // catch (SocketException e)
-        // {
-        // }
 
     }
 }
