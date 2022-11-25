@@ -85,11 +85,13 @@ namespace CoolNameSpace
             return new float[3] { xpos, ypos, zpos };
         }
 
-        void SendToAllOther(byte[] packet) {
+        void SendToAllOther(byte[] packet)
+        {
 
-            Console.WriteLine("Type1:" + BitConverter.ToUInt16(packet));
-            foreach (Client client in instance.clients.Values) {
-                if (client.id != id) {
+            foreach (Client client in instance.clients.Values)
+            {
+                if (client.id != id)
+                {
                     Console.WriteLine("Enqued packet");
                     client.udp.OutPacketQueue.Enqueue(packet);
                 }
@@ -100,70 +102,77 @@ namespace CoolNameSpace
         public void HandlePlayerRotation(byte[] packetContent, Client client)
         {
 
-                List<byte> bytes = new List<byte>();
+            List<byte> bytes = new List<byte>();
 
-                float rotation = BitConverter.ToSingle(packetContent);
-                client.rotation = rotation;
+            float rotation = BitConverter.ToSingle(packetContent);
+            client.rotation = rotation;
 
-                byte[] idBytes = BitConverter.GetBytes(client.id);
-                byte[] rotationBytes = BitConverter.GetBytes(client.rotation);
+            byte[] idBytes = BitConverter.GetBytes(client.id);
+            byte[] rotationBytes = BitConverter.GetBytes(client.rotation);
 
-                bytes.AddRange(idBytes);
-                bytes.AddRange(rotationBytes);
+            bytes.AddRange(idBytes);
+            bytes.AddRange(rotationBytes);
 
-                byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, bytes.ToArray());
+            byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, bytes.ToArray());
 
-                Console.WriteLine("Type:" + BitConverter.ToUInt16(packet));
+            Console.WriteLine("Type:" + BitConverter.ToUInt16(packet));
 
-                SendToAllOther(packet);
+            SendToAllOther(packet);
         }
         public void HandlePlayerPosition(byte[] packetContent)
         {
-                float[] position = byteToPosition(packetContent);
-                UpdatePosition(position);
+            float[] position = byteToPosition(packetContent);
+            UpdatePosition(position);
 
-                byte[] bytes = PositionToBytes(new float[3] { x, y, z }, id);
-                byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, bytes);
+            byte[] bytes = PositionToBytes(new float[3] { x, y, z }, id);
+            byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, bytes);
 
-                SendToAllOther(packet);
+            SendToAllOther(packet);
         }
-        public void HandlePacket(byte[] data) {
+        public void HandlePacket(byte[] data)
+        {
             PacketStream packet = new PacketStream(data);
 
             ushort packetType = packet.ReadUShort();
             ushort packetLength = packet.ReadUShort();
             byte[] packetContent = packet.ReadContent(packetLength);
 
-            if (packetType == 0) {
+            if (packetType == 0)
+            {
                 return;
             }
 
-            switch (packetType) {
-                case ((ushort) CSTypes.playerPosition):
+            switch (packetType)
+            {
+                case ((ushort)CSTypes.playerPosition):
                     HandlePlayerPosition(packetContent);
                     break;
             }
 
         }
-        public class Tcp {
+        public class Tcp
+        {
             public TcpClient tcpClient;
             public NetworkStream stream;
 
             public Queue<byte[]> packetQueue = new Queue<byte[]>();
-            public Tcp (TcpClient _tcpClient) {
+            public Tcp(TcpClient _tcpClient)
+            {
                 tcpClient = _tcpClient;
                 stream = tcpClient.GetStream();
             }
 
         }
-         
-        public class Udp {
+
+        public class Udp
+        {
 
             public IPEndPoint endpoint;
             public Queue<byte[]> InPacketQueue = new Queue<byte[]>();
             public Queue<byte[]> OutPacketQueue = new Queue<byte[]>();
             public bool connected = false;
-            public void Connect(IPEndPoint _endpoint) {
+            public void Connect(IPEndPoint _endpoint)
+            {
                 endpoint = _endpoint;
                 connected = true;
             }

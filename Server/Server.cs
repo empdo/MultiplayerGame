@@ -58,10 +58,10 @@ namespace CoolNameSpace
                     Client _client = new Client(client, count, instance);
                     lock (_lock) { clients.Add(count, _client); }
 
-                    Console.WriteLine("New connection");
+                    Console.WriteLine("New connection, count:" + count);
 
-                    Thread thread = new Thread(() => clientHandler(count));
-                    thread.Start();
+                    Thread thread = new Thread(clientHandler);
+                    thread.Start(count);
 
                     count++;
                 }
@@ -83,7 +83,7 @@ namespace CoolNameSpace
                 byte[] data = udpServer.EndReceive(_result, ref _endPoint);
                 udpServer.BeginReceive(UDPReceiveCallback, null);
 
-                if (data.Length < 4)
+                if (data.Length < 2)
                 {
                     return;
                 }
@@ -94,7 +94,6 @@ namespace CoolNameSpace
                 {
                     return;
                 }
-
                 if (clients[clientId].udp.endpoint == null)
                 {
                     Console.WriteLine("New Client");
@@ -141,6 +140,7 @@ namespace CoolNameSpace
                     udpServer.BeginSend(packet, packet.Length, client.udp.endpoint, null, null);
                     foreach (byte[] _packet in client.udp.OutPacketQueue)
                     {
+                        Console.WriteLine(BitConverter.ToUInt16(_packet));
                         udpServer.BeginSend(_packet, _packet.Length, client.udp.endpoint, null, null);
                     }
 
@@ -239,9 +239,9 @@ namespace CoolNameSpace
 
         public void clientHandler(object count)
         {
+            Console.WriteLine("Count: " + count);
             Client client;
             lock (_lock) { client = clients[(int)count]; }
-
             byte[] byteId = BitConverter.GetBytes((ushort)(int)count);
 
             client.tcp.packetQueue.Enqueue(ConstructPackage((ushort)CSTypes.playerId, byteId));

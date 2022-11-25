@@ -149,13 +149,14 @@ namespace MultiplayerAssets
             }
         }
 
-        void HandlePlayerId(byte[] data) {
+        void HandlePlayerId(byte[] data)
+        {
             playerId = BitConverter.ToUInt16(data);
 
             udp.Connect(port);
         }
 
-        void OnTick()
+        public void OnTick()
         {
             clientsManager.tickRate = currentTickRate;
 
@@ -172,15 +173,17 @@ namespace MultiplayerAssets
 
             float rotation = localPlayer.transform.localRotation.eulerAngles.y;
 
-            if (localPlayer != null && oldRot != rotation) 
+            if (localPlayer != null && oldRot != rotation)
             {
                 RotationToPacket(rotation, (ushort)CSTypes.playerRotation);
                 oldRot = rotation;
             }
 
 
-            if (udp.connected) {
-                foreach (byte[] packet in udp.packetQueue) {
+            if (udp.connected)
+            {
+                foreach (byte[] packet in udp.packetQueue)
+                {
                     udp.client.Send(packet, packet.Length);
                 }
 
@@ -243,22 +246,11 @@ namespace MultiplayerAssets
         }
 
 
-        void HandleTickSync(byte[] packetContent)
-        {
-            ushort tick = BitConverter.ToUInt16(packetContent);
-
-            if (serverTick != tick)
-            {
-                Debug.Log("Synced tick, from: " + serverTick + " to " + tick);
-                serverTick = tick;
-            }
-
-        }
-
 
     }
 
-    public class Udp {
+    public class Udp
+    {
         public UdpClient client;
         public IPEndPoint endpoint;
 
@@ -267,12 +259,14 @@ namespace MultiplayerAssets
 
 
         public Queue<byte[]> packetQueue = new Queue<byte[]>();
-        public Udp(ClientConnection _instance) {
+        public Udp(ClientConnection _instance)
+        {
             instance = _instance;
-            endpoint = new IPEndPoint(IPAddress.Parse(instance.IpAddress), instance.port);;
+            endpoint = new IPEndPoint(IPAddress.Parse(instance.IpAddress), instance.port); ;
         }
 
-        public void Connect(int _port) {
+        public void Connect(int _port)
+        {
             client = new UdpClient(_port + 7);
 
             client.Connect(endpoint);
@@ -297,13 +291,14 @@ namespace MultiplayerAssets
 
                 HandleData(_data);
             }
-            catch
+            catch (Exception e)
             {
-                Debug.Log("Error on Callback");
+                Debug.Log("Error: " + e.ToString());
             }
         }
 
-        public void QueuePacket(byte[] _packet, ushort id) {
+        public void QueuePacket(byte[] _packet, ushort id)
+        {
             List<byte> packet = new List<byte>();
             packet.AddRange(BitConverter.GetBytes(id));
             packet.AddRange(_packet);
@@ -312,33 +307,38 @@ namespace MultiplayerAssets
 
         }
 
-        void HandleData(byte[] data) {
+        void HandleData(byte[] data)
+        {
             int streamLength = data.Length;
             PacketStream result = new PacketStream(data);
 
-                ushort packetType = result.ReadUShort();
+            ushort packetType = result.ReadUShort();
 
-                if (packetType == 0)
-                {
-                    return;
-                }
+            if (packetType == 0)
+            {
+                return;
+            }
 
-                ushort packetLength = result.ReadUShort();
+            ushort packetLength = result.ReadUShort();
 
-                byte[] packetContent = result.ReadContent(packetLength);
+            byte[] packetContent = result.ReadContent(packetLength);
 
+            if (packetType == 4)
+            {
                 Debug.Log("packetType: " + packetType);
-                
-                switch (packetType)
-                {
-                    case (ushort)CSTypes.playerPosition:
-                        PlayerPosition(packetContent);
-                        break;
-                    case (ushort)CSTypes.playerRotation:
-                        PlayerRotation(packetContent);
-                        break;
-                }
 
+            }
+
+            switch (packetType)
+            {
+                case (ushort)CSTypes.playerPosition:
+                    PlayerPosition(packetContent);
+                    break;
+                case (ushort)CSTypes.playerRotation:
+                    PlayerRotation(packetContent);
+                    break;
+
+            }
 
         }
 

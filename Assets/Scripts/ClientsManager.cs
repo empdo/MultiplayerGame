@@ -17,6 +17,8 @@ namespace MultiplayerAssets
         public List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
         public List<Client> clients = new List<Client>();
         public float tickRate;
+
+        public Queue<(ushort, Vector3)> playerSpawnQueue = new Queue<(ushort, Vector3)>();
         public class Client
         {
             public ushort id;
@@ -42,6 +44,12 @@ namespace MultiplayerAssets
 
         void Update()
         {
+            foreach ((ushort, Vector3) player in playerSpawnQueue)
+            {
+                HandleNewPlayer(player.Item1, player.Item2);
+            }
+
+            playerSpawnQueue.Clear();
         }
 
         public void HandleNewPlayer(ushort id, Vector3 position)
@@ -72,6 +80,7 @@ namespace MultiplayerAssets
 
         public void PlayerPosition(ushort id, Vector3 position)
         {
+
             Client? client = clients.Find(client => client.id == id);
 
             positionPacketBuffer.Add((id, position));
@@ -95,7 +104,16 @@ namespace MultiplayerAssets
             }
             else
             {
-                HandleNewPlayer(id, position);
+                List<int> l = new List<int>();
+                foreach ((ushort, Vector3) player in playerSpawnQueue)
+                {
+                    l.Append(player.Item1);
+                }
+                if (!l.Contains(id))
+                {
+
+                    playerSpawnQueue.Enqueue((id, position));
+                }
             }
 
 
