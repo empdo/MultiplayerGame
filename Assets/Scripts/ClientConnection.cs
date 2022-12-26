@@ -103,6 +103,19 @@ namespace MultiplayerAssets
 
         }
 
+        void Update()
+        {
+            if (udp != null)
+            {
+
+                foreach (byte[] packet in udp.inPacketQueue.ToList())
+                {
+                    udp.HandleUdpData(packet);
+                }
+                udp.inPacketQueue.Clear();
+            }
+        }
+
         void RunProcessData()
         {
             if (stream != null && stream.DataAvailable)
@@ -139,7 +152,7 @@ namespace MultiplayerAssets
                 switch (packetType)
                 {
                     case (ushort)CSTypes.ping:
-                        OnTick();
+                        TcpOnTick();
                         break;
                     case (ushort)CSTypes.playerId:
                         HandlePlayerId(packetContent);
@@ -156,13 +169,30 @@ namespace MultiplayerAssets
             udp.Connect(port);
         }
 
-        public void OnTick()
+        public void TcpOnTick()
         {
+
+            if (packetQueue.Count > 0)
+            {
+                foreach (byte[] packet in packetQueue)
+                {
+                    stream.Write(packet, 0, packet.Length);
+                }
+
+                packetQueue.Clear();
+            }
+
+
+        }
+
+        public void UdpOnTick()
+        {
+            Debug.Log("UdpONTock");
+
             clientsManager.tickRate = currentTickRate;
 
             _UIManager.pingText.text = "Tickrate :" + currentTickRate;
             currentTickRate = 0;
-
 
             if (localPlayer != null && oldpos != localPlayer.transform.position)
             {
@@ -179,28 +209,17 @@ namespace MultiplayerAssets
                 oldRot = rotation;
             }
 
-
             if (udp.connected)
             {
+
                 foreach (byte[] packet in udp.packetQueue)
                 {
                     udp.client.Send(packet, packet.Length);
                 }
-
-                udp.packetQueue.Clear();
-            }
-
-            if (packetQueue.Count > 0)
-            {
-                foreach (byte[] packet in packetQueue)
-                {
-                    stream.Write(packet, 0, packet.Length);
-                }
-
-                packetQueue.Clear();
             }
 
 
+            udp.packetQueue.Clear();
         }
 
 
@@ -259,21 +278,27 @@ namespace MultiplayerAssets
 
 
         public Queue<byte[]> packetQueue = new Queue<byte[]>();
+        public Queue<byte[]> inPacketQueue = new Queue<byte[]>();
         public Udp(ClientConnection _instance)
         {
             instance = _instance;
-            endpoint = new IPEndPoint(IPAddress.Parse(instance.IpAddress), instance.port); ;
+            endpoint = new IPEndPoint(IPAddress.Parse(instance.IpAddress), instance.port) ;
         }
 
         public void Connect(int _port)
         {
             client = new UdpClient(_port + 7);
+                client.Client.SetSocketOption(
+                SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
             client.Connect(endpoint);
-            client.BeginReceive(ReceiveCallback, null);
+            client.BeginReceive(new AsyncCallback(ReceiveCallback), null);
 
             connected = true;
             Debug.Log("Udp connection established");
+
+            byte[] packet = instance.ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
+            client.Send(packet, packet.Length);
 
         }
 
@@ -282,14 +307,14 @@ namespace MultiplayerAssets
             try
             {
                 byte[] _data = client.EndReceive(_result, ref endpoint);
-                client.BeginReceive(ReceiveCallback, null);
+                client.BeginReceive(new AsyncCallback(ReceiveCallback), null);
 
                 if (_data.Length < 4)
                 {
                     return;
                 }
 
-                HandleData(_data);
+                inPacketQueue.Enqueue(_data);
             }
             catch (Exception e)
             {
@@ -297,17 +322,7 @@ namespace MultiplayerAssets
             }
         }
 
-        public void QueuePacket(byte[] _packet, ushort id)
-        {
-            List<byte> packet = new List<byte>();
-            packet.AddRange(BitConverter.GetBytes(id));
-            packet.AddRange(_packet);
-
-            packetQueue.Enqueue(packet.ToArray());
-
-        }
-
-        void HandleData(byte[] data)
+        public void HandleUdpData(byte[] data)
         {
             int streamLength = data.Length;
             PacketStream result = new PacketStream(data);
@@ -323,14 +338,13 @@ namespace MultiplayerAssets
 
             byte[] packetContent = result.ReadContent(packetLength);
 
-            if (packetType == 4)
-            {
-                Debug.Log("packetType: " + packetType);
-
-            }
+            Debug.Log("packetType: " + packetType);
 
             switch (packetType)
             {
+                case (ushort)CSTypes.ping:
+                    instance.UdpOnTick();
+                    break;
                 case (ushort)CSTypes.playerPosition:
                     PlayerPosition(packetContent);
                     break;
@@ -339,6 +353,15 @@ namespace MultiplayerAssets
                     break;
 
             }
+
+        }
+        public void QueuePacket(byte[] _packet, ushort id)
+        {
+            List<byte> packet = new List<byte>();
+            packet.AddRange(BitConverter.GetBytes(id));
+            packet.AddRange(_packet);
+
+            packetQueue.Enqueue(packet.ToArray());
 
         }
 

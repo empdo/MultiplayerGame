@@ -47,6 +47,8 @@ namespace CoolNameSpace
                 tcpServer.Start();
 
                 udpServer = new UdpClient(port);
+                udpServer.Client.SetSocketOption(
+                    SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 udpServer.BeginReceive(UDPReceiveCallback, null);
 
                 int count = 1;
@@ -136,11 +138,10 @@ namespace CoolNameSpace
 
                 if (client.udp.endpoint != null)
                 {
-
                     udpServer.BeginSend(packet, packet.Length, client.udp.endpoint, null, null);
                     foreach (byte[] _packet in client.udp.OutPacketQueue)
                     {
-                        Console.WriteLine(BitConverter.ToUInt16(_packet));
+                        Console.WriteLine("Sent packet with type: " + BitConverter.ToUInt16(_packet));
                         udpServer.BeginSend(_packet, _packet.Length, client.udp.endpoint, null, null);
                     }
 

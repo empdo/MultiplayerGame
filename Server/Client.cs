@@ -136,6 +136,7 @@ namespace CoolNameSpace
             ushort packetType = packet.ReadUShort();
             ushort packetLength = packet.ReadUShort();
             byte[] packetContent = packet.ReadContent(packetLength);
+            Console.WriteLine(packetType);
 
             if (packetType == 0)
             {
