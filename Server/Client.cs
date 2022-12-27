@@ -90,11 +90,8 @@ namespace CoolNameSpace
 
             foreach (Client client in instance.clients.Values)
             {
-                if (client.id != id)
-                {
-                    Console.WriteLine("Enqued packet");
-                    client.udp.OutPacketQueue.Enqueue(packet);
-                }
+                Console.WriteLine("Enqued packet");
+                client.udp.OutPacketQueue.Enqueue(packet);
             }
 
         }
@@ -136,7 +133,7 @@ namespace CoolNameSpace
             ushort packetType = packet.ReadUShort();
             ushort packetLength = packet.ReadUShort();
             byte[] packetContent = packet.ReadContent(packetLength);
-            Console.WriteLine(packetType);
+            Console.WriteLine("packet type: " + packetType);
 
             if (packetType == 0)
             {

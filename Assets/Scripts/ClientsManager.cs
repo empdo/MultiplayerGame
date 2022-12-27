@@ -78,16 +78,16 @@ namespace MultiplayerAssets
             }
         }
 
-        public void PlayerPosition(ushort id, Vector3 position)
+        public void PlayerPosition(ushort _id, Vector3 position)
         {
 
-            Client? client = clients.Find(client => client.id == id);
+            Client? client = clients.Find(client => client.id == _id);
 
-            positionPacketBuffer.Add((id, position));
+            positionPacketBuffer.Add((_id, position));
 
             if (client != null && client.lerper != null)
             {
-                List<(ushort, Vector3)> positions = positionPacketBuffer.Where(packet => packet.Item1 == id).ToList();
+                List<(ushort, Vector3)> positions = positionPacketBuffer.Where(packet => packet.Item1 == _id).ToList();
 
                 if (positions.Count() == 1)
                 {
@@ -109,10 +109,11 @@ namespace MultiplayerAssets
                 {
                     l.Append(player.Item1);
                 }
-                if (!l.Contains(id))
+
+                if (!l.Contains(_id))
                 {
 
-                    playerSpawnQueue.Enqueue((id, position));
+                    playerSpawnQueue.Enqueue((_id, position));
                 }
             }
 

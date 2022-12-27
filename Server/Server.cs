@@ -15,7 +15,6 @@ namespace CoolNameSpace
     {
         ping = 1,
         playerId,
-
         playerJoin,
         playerPosition,
         playerRotation,
@@ -41,6 +40,7 @@ namespace CoolNameSpace
             try
             {
                 Int32 port = 13000;
+
                 IPAddress localAddr = IPAddress.Parse("0.0.0.0");
 
                 tcpServer = new TcpListener(localAddr, port);
@@ -49,6 +49,7 @@ namespace CoolNameSpace
                 udpServer = new UdpClient(port);
                 udpServer.Client.SetSocketOption(
                     SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
                 udpServer.BeginReceive(UDPReceiveCallback, null);
 
                 int count = 1;
@@ -85,6 +86,8 @@ namespace CoolNameSpace
                 byte[] data = udpServer.EndReceive(_result, ref _endPoint);
                 udpServer.BeginReceive(UDPReceiveCallback, null);
 
+                Console.WriteLine(data.Length);
+
                 if (data.Length < 2)
                 {
                     return;
@@ -98,7 +101,7 @@ namespace CoolNameSpace
                 }
                 if (clients[clientId].udp.endpoint == null)
                 {
-                    Console.WriteLine("New Client");
+                    Console.WriteLine("New Client with id: " + clientId);
                     // If this is a new connection
                     clients[clientId].udp.Connect(_endPoint);
                     return;
@@ -106,6 +109,7 @@ namespace CoolNameSpace
 
                 if (clients[clientId].udp.endpoint.ToString() == _endPoint.ToString())
                 {
+                    Console.WriteLine("packet from: " + clientId);
                     clients[clientId].HandlePacket(data.Skip(sizeof(ushort)).ToArray());
                 }
             }
@@ -141,7 +145,8 @@ namespace CoolNameSpace
                     udpServer.BeginSend(packet, packet.Length, client.udp.endpoint, null, null);
                     foreach (byte[] _packet in client.udp.OutPacketQueue)
                     {
-                        Console.WriteLine("Sent packet with type: " + BitConverter.ToUInt16(_packet));
+                        Console.WriteLine("Sent packet to: " + client.id + " with type: " + BitConverter.ToUInt16(_packet));
+
                         udpServer.BeginSend(_packet, _packet.Length, client.udp.endpoint, null, null);
                     }
 
@@ -185,58 +190,6 @@ namespace CoolNameSpace
             }
 
         }
-
-        //    public void HandlePlayerState(byte[] packetContent, Client client)
-        //    {
-        //        lock (client)
-        //        {
-        //            List<byte> bytes = new List<byte>();
-
-        //            ushort _state = BitConverter.ToUInt16(packetContent);
-
-        //            CoolNameSpace.PlayerStates state;
-
-        //            if (Enum.IsDefined(typeof(CoolNameSpace.PlayerStates), _state))
-        //            {
-        //                state = (CoolNameSpace.PlayerStates)_state;
-        //            }
-        //            else
-        //            {
-        //                return;
-        //            }
-
-        //            client.playerState = state;
-
-
-        //            byte[] stateBytes = BitConverter.GetBytes((ushort)client.playerState);
-        //            byte[] idBytes = BitConverter.GetBytes(client.id);
-
-        //            bytes.AddRange(idBytes);
-        //            bytes.AddRange(stateBytes);
-
-        //            byte[] packet = ConstructPackage((ushort)CSTypes.playerStateChange, bytes.ToArray());
-
-
-        //            SendToAllOther(client, packet);
-        //        }
-        //    }
-
-
-        //    void OnJoin(Client client)
-        //    {
-        //        lock (client)
-        //        {
-
-        //            foreach (Client _client in clients.Values)
-        //            {
-        //                if (client != _client)
-        //                {
-        //                    byte[] packet = ConstructPackage((ushort)CSTypes.playerPosition, PositionToBytes(new float[] { _client.x, _client.y, _client.z }, _client.id));
-        //                    client.tcp.packetQueue.Enqueue(packet);
-        //                }
-        //            }
-        //        }
-        //    }
 
         public void clientHandler(object count)
         {

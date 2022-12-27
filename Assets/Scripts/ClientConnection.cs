@@ -187,15 +187,15 @@ namespace MultiplayerAssets
 
         public void UdpOnTick()
         {
-            Debug.Log("UdpONTock");
-
             clientsManager.tickRate = currentTickRate;
+            //sd
 
             _UIManager.pingText.text = "Tickrate :" + currentTickRate;
             currentTickRate = 0;
 
             if (localPlayer != null && oldpos != localPlayer.transform.position)
             {
+                Debug.Log("moved");
 
                 positionToPacket(localPlayer.transform.position, (ushort)CSTypes.playerPosition);
                 oldpos = localPlayer.transform.position;
@@ -214,6 +214,8 @@ namespace MultiplayerAssets
 
                 foreach (byte[] packet in udp.packetQueue)
                 {
+
+                    Debug.Log("Sent packet wtih type: " + BitConverter.ToUInt16(packet.ToArray()) + "and length: " + packet.Length);
                     udp.client.Send(packet, packet.Length);
                 }
             }
@@ -282,14 +284,14 @@ namespace MultiplayerAssets
         public Udp(ClientConnection _instance)
         {
             instance = _instance;
-            endpoint = new IPEndPoint(IPAddress.Parse(instance.IpAddress), instance.port) ;
+            endpoint = new IPEndPoint(IPAddress.Parse(instance.IpAddress), instance.port);
         }
 
         public void Connect(int _port)
         {
-            client = new UdpClient(_port + 7);
-                client.Client.SetSocketOption(
-                SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            client = new UdpClient(_port);
+            client.Client.SetSocketOption(
+            SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
             client.Connect(endpoint);
             client.BeginReceive(new AsyncCallback(ReceiveCallback), null);
@@ -324,7 +326,12 @@ namespace MultiplayerAssets
 
         public void HandleUdpData(byte[] data)
         {
-            int streamLength = data.Length;
+
+            if (data.Length < 4)
+            {
+                return;
+            }
+
             PacketStream result = new PacketStream(data);
 
             ushort packetType = result.ReadUShort();
@@ -337,8 +344,6 @@ namespace MultiplayerAssets
             ushort packetLength = result.ReadUShort();
 
             byte[] packetContent = result.ReadContent(packetLength);
-
-            Debug.Log("packetType: " + packetType);
 
             switch (packetType)
             {
@@ -362,6 +367,7 @@ namespace MultiplayerAssets
             packet.AddRange(_packet);
 
             packetQueue.Enqueue(packet.ToArray());
+
 
         }
 
@@ -399,6 +405,10 @@ namespace MultiplayerAssets
             {
                 ushort id = (ushort)response.Item1;
                 Vector3 position = response.Item2;
+
+                if (instance.playerId == id) return;
+
+                Debug.Log("Postion packet from:" + id);
 
                 instance.clientsManager.PlayerPosition(id, position);
             }

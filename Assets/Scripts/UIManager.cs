@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+
 namespace MultiplayerAssets
 {
 
@@ -34,6 +35,10 @@ namespace MultiplayerAssets
         {
             _UIState = true;
         }
+
+        void Update()
+        {
+        }
         void SetUIState()
         {
 
@@ -42,7 +47,6 @@ namespace MultiplayerAssets
             IpInput.gameObject.SetActive(_UIState);
             enviroment.SetActive(!_UIState);
 
-            Cursor.lockState = _UIState ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = _UIState;
         }
 
