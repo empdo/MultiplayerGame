@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 5135736192740683814}
   - component: {fileID: 5801400762490814210}
   - component: {fileID: 5218923916089624950}
+  - component: {fileID: 5354198799699844810}
   m_Layer: 0
   m_Name: MainCamera
   m_TagString: MainCamera
@@ -152,6 +153,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
     type: 3}
+  tickRate: 0
 --- !u!114 &5218923916089624950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,12 +166,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35adad44747a1ab528770fee652329f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  instance: {fileID: 0}
   port: 13000
   IpAddress: 83.227.32.208
   playerPrefab: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
     type: 3}
   localPlayerPrefab: {fileID: 8515999597533934103, guid: 0674ae83686646571a9e49ba395f3c3c,
     type: 3}
-  localPlayer: {fileID: 0}
+  playerId: 0
   clientsManager: {fileID: 5801400762490814210}
   _UIManager: {fileID: 2779373384791953795}
+--- !u!114 &5354198799699844810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9005220659476430823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9d7420533d20512bb521d2fcc4c24de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

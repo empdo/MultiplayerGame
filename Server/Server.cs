@@ -54,6 +54,8 @@ namespace CoolNameSpace
 
                 int count = 1;
 
+                Console.WriteLine($"Started server on ip {localAddr} and port {port} ");
+
                 while (true)
                 {
 
@@ -86,7 +88,6 @@ namespace CoolNameSpace
                 byte[] data = udpServer.EndReceive(_result, ref _endPoint);
                 udpServer.BeginReceive(UDPReceiveCallback, null);
 
-                Console.WriteLine(data.Length);
 
                 if (data.Length < 2)
                 {
@@ -95,31 +96,42 @@ namespace CoolNameSpace
 
                 int clientId = BitConverter.ToUInt16(data, 0);
 
+                Console.WriteLine($"packet from client {clientId}, {clients[clientId].udp.endpoint}");
+
                 if (clientId == 0)
                 {
                     return;
                 }
                 if (clients[clientId].udp.endpoint == null)
                 {
-                    Console.WriteLine("New Client with id: " + clientId);
                     // If this is a new connection
                     clients[clientId].udp.Connect(_endPoint);
+                    Console.WriteLine("New connection!");
+                    PPrintClients();
                     return;
                 }
 
                 if (clients[clientId].udp.endpoint.ToString() == _endPoint.ToString())
                 {
-                    Console.WriteLine("packet from: " + clientId);
                     clients[clientId].HandlePacket(data.Skip(sizeof(ushort)).ToArray());
                 }
+
+                Console.WriteLine($"Packet, length: {data.Length}, from: {clientId}");
             }
+
             catch (Exception _ex)
             {
                 Console.WriteLine($"Error receiving UDP data: {_ex}");
             }
         }
 
-
+        public void PPrintClients()
+        {
+            foreach (Client client in clients.Values)
+            {
+                Console.WriteLine($"Id: {client.id} and enpoint {client.udp.endpoint}");
+            }
+        }
 
         public void StartTimer()
         {
@@ -128,6 +140,12 @@ namespace CoolNameSpace
 
             timer.Enabled = true;
             Console.WriteLine("Started Timer");
+
+        }
+
+        public void Skit(Object source, ElapsedEventArgs e)
+        {
+            clients.Remove(1);
         }
 
         public void TickHandler(Object source, ElapsedEventArgs e)
@@ -135,31 +153,67 @@ namespace CoolNameSpace
             //Tickrate 125, intervall på 8ms
             currentTick++;
 
-            byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
+            if (currentTick % 10 == 0)
+            {
+                //                Console.WriteLine($"Current tick: {currentTick}, amount of clients: {clients.Count}");
+
+            }
+
+            byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("p"));
 
             foreach (Client client in clients.Values)
             {
 
-                if (client.udp.endpoint != null)
+                //                Console.WriteLine($"PacketQueue Length: {client.udp.OutPacketQueue.Count}");
+                try
                 {
-                    udpServer.BeginSend(packet, packet.Length, client.udp.endpoint, null, null);
-                    foreach (byte[] _packet in client.udp.OutPacketQueue)
+                    //                    Console.WriteLine($"enpoint for id: {client.id}: {client.udp.endpoint}");
+                    if (client.udp.endpoint != null)
                     {
-                        Console.WriteLine("Sent packet to: " + client.id + " with type: " + BitConverter.ToUInt16(_packet));
+                        udpServer.BeginSend(packet, packet.Length, client.udp.endpoint, null, null);
+                        udpServer.Send(packet, packet.Length, client.udp.endpoint);
+                        foreach (byte[] _packet in client.udp.OutPacketQueue)
+                        {
+                            Console.WriteLine("Sent packet to client with id: " + client.id + " and enpoint " + client.udp.endpoint + " with type: " + BitConverter.ToUInt16(_packet));
 
-                        udpServer.BeginSend(_packet, _packet.Length, client.udp.endpoint, null, null);
+                            Console.WriteLine($"{clients.Count} clients connected");
+
+                            udpServer.BeginSend(_packet, _packet.Length, client.udp.endpoint, asyncResult =>
+                            {
+                                int bytesSent;
+                                try
+                                {
+                                    udpServer.EndSend(asyncResult);
+                                }
+                                catch (Exception exception)
+                                {
+                                    Console.WriteLine("Error sending packet");
+                                }
+                            }, null);
+                        }
+
                     }
-
                 }
+                catch (System.Exception _e)
+                {
+                    Console.WriteLine($"Error sending data to {client.udp.endpoint} via UDP {_e}");
+                }
+
                 client.udp.OutPacketQueue.Clear();
 
                 client.tcp.stream.Write(packet, 0, packet.Length);
                 foreach (byte[] _packet in client.tcp.packetQueue)
                 {
                     client.tcp.stream.Write(_packet, 0, _packet.Length);
+                    Console.WriteLine($"Sent tcp data to id: {client.id}");
                 }
                 client.tcp.packetQueue.Clear();
             }
+        }
+
+        void SentCallBack(IAsyncResult ar)
+        {
+
         }
 
 
@@ -199,6 +253,8 @@ namespace CoolNameSpace
             byte[] byteId = BitConverter.GetBytes((ushort)(int)count);
 
             client.tcp.packetQueue.Enqueue(ConstructPackage((ushort)CSTypes.playerId, byteId));
+
+            Console.WriteLine("Packet queue: " + client.tcp.packetQueue.Count);
 
             while (client.tcp.tcpClient.Client.Connected)
             {

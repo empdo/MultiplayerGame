@@ -6,7 +6,6 @@ public class Lerper : MonoBehaviour
 {
     public GameObject player;
     float timer = 0f;
-    float _timer = 0f;
     public float time;
     public Vector3 startPos;
 

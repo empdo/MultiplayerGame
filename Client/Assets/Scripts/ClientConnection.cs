@@ -14,6 +14,7 @@ using UnityEngine;
 
 using StarterAssets;
 
+
 namespace MultiplayerAssets
 {
     public enum CSTypes
@@ -40,7 +41,7 @@ namespace MultiplayerAssets
         public string IpAddress = "127.0.0.1";
 
         public Udp udp;
-        static TcpClient client;
+        public TcpClient client;
         static NetworkStream stream;
         public GameObject playerPrefab;
         public GameObject localPlayerPrefab;
@@ -71,7 +72,7 @@ namespace MultiplayerAssets
         }
         void Connect()
         {
-            Debug.Log("Connecting");
+            Debug.Log("Connecting to port: " + port);
             client = new TcpClient(IpAddress, port);
             stream = client.GetStream();
 
@@ -80,7 +81,6 @@ namespace MultiplayerAssets
             _UIManager.UIState = false;
 
             localPlayer = Instantiate(localPlayerPrefab, new Vector3(0, 5, 0), Quaternion.identity);
-
         }
 
 
@@ -101,19 +101,24 @@ namespace MultiplayerAssets
             currentTickRate += Time.fixedDeltaTime;
             RunProcessData();
 
+
+            if (udp.connected)
+            {
+
+                foreach (byte[] packet in udp.packetQueue)
+                {
+
+                    Debug.Log("Sent packet wtih type: " + BitConverter.ToUInt16(packet.ToArray()) + "and length: " + packet.Length);
+                    udp.client.Send(packet, packet.Length, udp.endpoint);
+                }
+            }
+
+
+            udp.packetQueue.Clear();
         }
 
         void Update()
         {
-            if (udp != null)
-            {
-
-                foreach (byte[] packet in udp.inPacketQueue.ToList())
-                {
-                    udp.HandleUdpData(packet);
-                }
-                udp.inPacketQueue.Clear();
-            }
         }
 
         void RunProcessData()
@@ -148,7 +153,6 @@ namespace MultiplayerAssets
 
                 byte[] packetContent = result.ReadContent(packetLength);
 
-
                 switch (packetType)
                 {
                     case (ushort)CSTypes.ping:
@@ -165,6 +169,7 @@ namespace MultiplayerAssets
         void HandlePlayerId(byte[] data)
         {
             playerId = BitConverter.ToUInt16(data);
+            Debug.Log("Recieved id: " + playerId);
 
             udp.Connect(port);
         }
@@ -187,6 +192,7 @@ namespace MultiplayerAssets
 
         public void UdpOnTick()
         {
+            Debug.Log("Recieved udp packet");
             clientsManager.tickRate = currentTickRate;
             //sd
 
@@ -209,19 +215,6 @@ namespace MultiplayerAssets
                 oldRot = rotation;
             }
 
-            if (udp.connected)
-            {
-
-                foreach (byte[] packet in udp.packetQueue)
-                {
-
-                    Debug.Log("Sent packet wtih type: " + BitConverter.ToUInt16(packet.ToArray()) + "and length: " + packet.Length);
-                    udp.client.Send(packet, packet.Length);
-                }
-            }
-
-
-            udp.packetQueue.Clear();
         }
 
 
@@ -279,6 +272,7 @@ namespace MultiplayerAssets
         ClientConnection instance;
 
 
+
         public Queue<byte[]> packetQueue = new Queue<byte[]>();
         public Queue<byte[]> inPacketQueue = new Queue<byte[]>();
         public Udp(ClientConnection _instance)
@@ -289,18 +283,22 @@ namespace MultiplayerAssets
 
         public void Connect(int _port)
         {
-            client = new UdpClient(_port);
+            client = new UdpClient(((IPEndPoint)instance.client.Client.LocalEndPoint).Port);
+
             client.Client.SetSocketOption(
             SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-            client.Connect(endpoint);
             client.BeginReceive(new AsyncCallback(ReceiveCallback), null);
+
+            byte[] packet = instance.ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
+
+            QueuePacket(packet, instance.playerId);
 
             connected = true;
             Debug.Log("Udp connection established");
 
-            byte[] packet = instance.ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("ping"));
-            client.Send(packet, packet.Length);
+
+            //            client.BeginSend(packet, packet.Length, endpoint, null, null);
 
         }
 
@@ -309,14 +307,23 @@ namespace MultiplayerAssets
             try
             {
                 byte[] _data = client.EndReceive(_result, ref endpoint);
-                client.BeginReceive(new AsyncCallback(ReceiveCallback), null);
 
                 if (_data.Length < 4)
                 {
                     return;
                 }
 
-                inPacketQueue.Enqueue(_data);
+                Debug.Log("Recieved data!");
+
+                ThreadManager.ExecuteOnMainThread(() =>
+                {
+                    Debug.Log("sak");
+                    HandleUdpData(_data);
+
+                });
+
+                client.BeginReceive(new AsyncCallback(ReceiveCallback), null);
+
             }
             catch (Exception e)
             {
@@ -348,6 +355,7 @@ namespace MultiplayerAssets
             switch (packetType)
             {
                 case (ushort)CSTypes.ping:
+                    Debug.Log("tick packet");
                     instance.UdpOnTick();
                     break;
                 case (ushort)CSTypes.playerPosition:

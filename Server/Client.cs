@@ -42,7 +42,6 @@ namespace CoolNameSpace
             z += position[2];
         }
 
-
         public byte[] ConstructPackage(ushort packetType, byte[] data)
         {
             List<byte> packet = new List<byte>();
@@ -173,6 +172,8 @@ namespace CoolNameSpace
             {
                 endpoint = _endpoint;
                 connected = true;
+
+                Console.WriteLine($"Endpoint: {endpoint}");
             }
 
 

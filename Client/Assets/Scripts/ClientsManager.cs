@@ -40,6 +40,7 @@ namespace MultiplayerAssets
         void Start()
         {
             Debug.Log("Start");
+            Debug.Log("hej");
         }
 
         void Update()
