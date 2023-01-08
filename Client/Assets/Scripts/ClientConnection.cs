@@ -52,6 +52,7 @@ namespace MultiplayerAssets
 
         float oldRot;
         float currentTickRate;
+        int currentTick = 0;
 
         StopWatch sw = new StopWatch();
 
@@ -77,10 +78,32 @@ namespace MultiplayerAssets
             stream = client.GetStream();
 
             udp = new Udp(instance);
+            StartTimer();
 
             _UIManager.UIState = false;
 
             localPlayer = Instantiate(localPlayerPrefab, new Vector3(0, 5, 0), Quaternion.identity);
+        }
+
+        void StartTimer()
+        {
+            System.Timers.Timer timer = new System.Timers.Timer(8);
+            timer.Elapsed += TickHandler;
+
+            timer.Enabled = true;
+            Console.WriteLine("Started Timer");
+        }
+
+        void TickHandler(System.Object source, ElapsedEventArgs e)
+        {
+            if (udp != null && udp.connected != null)
+            {
+                foreach (byte[] packet in udp.packetQueue)
+                {
+                    udp.client.Send(packet, packet.Length, udp.endpoint);
+                }
+                udp.packetQueue.Clear();
+            }
         }
 
 
@@ -99,33 +122,16 @@ namespace MultiplayerAssets
         void FixedUpdate()
         {
             currentTickRate += Time.fixedDeltaTime;
-            RunProcessData();
 
-
-
-
-        }
-
-        void Update()
-        {
-            if (udp != null && udp.connected != null)
-            {
-
-                foreach (byte[] packet in udp.packetQueue)
-                {
-                    udp.client.Send(packet, packet.Length, udp.endpoint);
-                }
-                udp.packetQueue.Clear();
-            }
-        }
-
-        void RunProcessData()
-        {
             if (stream != null && stream.DataAvailable)
 
             {
                 ProcessData();
             }
+        }
+
+        void Update()
+        {
         }
 
         void ProcessData()
@@ -185,16 +191,18 @@ namespace MultiplayerAssets
                 packetQueue.Clear();
             }
 
-
         }
 
         public void UdpOnTick()
         {
-            Debug.Log("Recieved udp packet");
             clientsManager.tickRate = currentTickRate;
-            //sd
+            currentTick++;
 
-            _UIManager.pingText.text = "Tickrate :" + currentTickRate;
+            if (currentTick % 125 == 0)
+            {
+                _UIManager.pingText.text = "Tickrate :" + currentTickRate;
+            }
+
             currentTickRate = 0;
 
             if (localPlayer != null && oldpos != localPlayer.transform.position)
@@ -212,7 +220,6 @@ namespace MultiplayerAssets
                 RotationToPacket(rotation, (ushort)CSTypes.playerRotation);
                 oldRot = rotation;
             }
-
         }
 
 

@@ -135,48 +135,32 @@ namespace CoolNameSpace
 
         public void StartTimer()
         {
+            //Tickrate 125, intervall på 8ms
             System.Timers.Timer timer = new System.Timers.Timer(8);
             timer.Elapsed += TickHandler;
 
             timer.Enabled = true;
             Console.WriteLine("Started Timer");
-
-        }
-
-        public void Skit(Object source, ElapsedEventArgs e)
-        {
-            clients.Remove(1);
         }
 
         public void TickHandler(Object source, ElapsedEventArgs e)
         {
-            //Tickrate 125, intervall på 8ms
             currentTick++;
-
-            if (currentTick % 10 == 0)
-            {
-                //                Console.WriteLine($"Current tick: {currentTick}, amount of clients: {clients.Count}");
-
-            }
 
             byte[] packet = ConstructPackage((ushort)CSTypes.ping, Encoding.ASCII.GetBytes("p"));
 
             foreach (Client client in clients.Values)
             {
 
-                //                Console.WriteLine($"PacketQueue Length: {client.udp.OutPacketQueue.Count}");
                 try
                 {
-                    //                    Console.WriteLine($"enpoint for id: {client.id}: {client.udp.endpoint}");
                     if (client.udp.endpoint != null)
                     {
                         udpServer.BeginSend(packet, packet.Length, client.udp.endpoint, null, null);
                         udpServer.Send(packet, packet.Length, client.udp.endpoint);
                         foreach (byte[] _packet in client.udp.OutPacketQueue)
                         {
-                            Console.WriteLine("Sent packet to client with id: " + client.id + " and enpoint " + client.udp.endpoint + " with type: " + BitConverter.ToUInt16(_packet));
-
-                            Console.WriteLine($"{clients.Count} clients connected");
+                            //                            Console.WriteLine("Sent packet to client with id: " + client.id + " and enpoint " + client.udp.endpoint + " with type: " + BitConverter.ToUInt16(_packet));
 
                             udpServer.BeginSend(_packet, _packet.Length, client.udp.endpoint, asyncResult =>
                             {
@@ -211,12 +195,6 @@ namespace CoolNameSpace
             }
         }
 
-        void SentCallBack(IAsyncResult ar)
-        {
-
-        }
-
-
 
         public byte[] ConstructPackage(ushort packetType, byte[] data)
         {
@@ -230,6 +208,7 @@ namespace CoolNameSpace
 
             return packet.ToArray();
         }
+
         public void SendToAllOther(Client client, byte[] packet)
         {
             lock (client)
@@ -276,12 +255,10 @@ namespace CoolNameSpace
                     }
                 }
             }
+
             Console.WriteLine("Removing client");
             lock (_lock) clients.Remove((int)count);
-            client.tcp.tcpClient.Client.Shutdown(SocketShutdown.Both);
-            client.tcp.tcpClient.Close();
         }
-
     }
 }
 

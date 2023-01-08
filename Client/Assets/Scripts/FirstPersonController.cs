@@ -54,15 +54,7 @@ namespace StarterAssets
         // cinemachine
         private float _cinemachineTargetPitch;
 
-        private float __speed;
         private float _speed;
-        // {
-        //     get => __speed;
-        //     set
-        //     {
-        //         __speed = value;
-        //     }
-        // }
         private float _rotationVelocity;
         private float _verticalVelocity;
         private float _terminalVelocity = 53.0f;
