@@ -102,23 +102,21 @@ namespace MultiplayerAssets
             RunProcessData();
 
 
-            if (udp.connected)
-            {
-
-                foreach (byte[] packet in udp.packetQueue)
-                {
-
-                    Debug.Log("Sent packet wtih type: " + BitConverter.ToUInt16(packet.ToArray()) + "and length: " + packet.Length);
-                    udp.client.Send(packet, packet.Length, udp.endpoint);
-                }
-            }
 
 
-            udp.packetQueue.Clear();
         }
 
         void Update()
         {
+            if (udp != null && udp.connected != null)
+            {
+
+                foreach (byte[] packet in udp.packetQueue)
+                {
+                    udp.client.Send(packet, packet.Length, udp.endpoint);
+                }
+                udp.packetQueue.Clear();
+            }
         }
 
         void RunProcessData()

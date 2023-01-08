@@ -95,16 +95,16 @@ namespace CoolNameSpace
 
         }
 
-        public void HandlePlayerRotation(byte[] packetContent, Client client)
+        public void HandlePlayerRotation(byte[] packetContent)
         {
 
             List<byte> bytes = new List<byte>();
 
             float rotation = BitConverter.ToSingle(packetContent);
-            client.rotation = rotation;
+            rotation = rotation;
 
-            byte[] idBytes = BitConverter.GetBytes(client.id);
-            byte[] rotationBytes = BitConverter.GetBytes(client.rotation);
+            byte[] idBytes = BitConverter.GetBytes(id);
+            byte[] rotationBytes = BitConverter.GetBytes(rotation);
 
             bytes.AddRange(idBytes);
             bytes.AddRange(rotationBytes);
@@ -143,6 +143,9 @@ namespace CoolNameSpace
             {
                 case ((ushort)CSTypes.playerPosition):
                     HandlePlayerPosition(packetContent);
+                    break;
+                case ((ushort)CSTypes.playerRotation):
+                    HandlePlayerRotation(packetContent);
                     break;
             }
 
