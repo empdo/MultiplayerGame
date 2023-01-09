@@ -46,11 +46,10 @@ namespace MultiplayerAssets
         public GameObject playerPrefab;
         public GameObject localPlayerPrefab;
         GameObject localPlayer;
-
         public ushort playerId;
         Vector3 oldpos;
 
-        float oldRot;
+        Quaternion oldRot;
         float currentTickRate;
         int currentTick = 0;
 
@@ -78,34 +77,11 @@ namespace MultiplayerAssets
             stream = client.GetStream();
 
             udp = new Udp(instance);
-            StartTimer();
 
             _UIManager.UIState = false;
 
             localPlayer = Instantiate(localPlayerPrefab, new Vector3(0, 5, 0), Quaternion.identity);
         }
-
-        void StartTimer()
-        {
-            System.Timers.Timer timer = new System.Timers.Timer(8);
-            timer.Elapsed += TickHandler;
-
-            timer.Enabled = true;
-            Console.WriteLine("Started Timer");
-        }
-
-        void TickHandler(System.Object source, ElapsedEventArgs e)
-        {
-            if (udp != null && udp.connected != null)
-            {
-                foreach (byte[] packet in udp.packetQueue)
-                {
-                    udp.client.Send(packet, packet.Length, udp.endpoint);
-                }
-                udp.packetQueue.Clear();
-            }
-        }
-
 
         public void SetIP(string value)
         {
@@ -132,6 +108,14 @@ namespace MultiplayerAssets
 
         void Update()
         {
+            if (udp != null && udp.connected)
+            {
+                foreach (byte[] packet in udp.packetQueue)
+                {
+                    udp.client.Send(packet, packet.Length, udp.endpoint);
+                }
+                udp.packetQueue.Clear();
+            }
         }
 
         void ProcessData()
@@ -213,12 +197,13 @@ namespace MultiplayerAssets
                 oldpos = localPlayer.transform.position;
             }
 
-            float rotation = localPlayer.transform.localRotation.eulerAngles.y;
+            float pitch = transform.localRotation.eulerAngles.x;
+            float yawn = transform.localRotation.eulerAngles.y;
 
-            if (localPlayer != null && oldRot != rotation)
+            if (localPlayer != null && oldRot != localPlayer.transform.rotation)
             {
-                RotationToPacket(rotation, (ushort)CSTypes.playerRotation);
-                oldRot = rotation;
+                RotationToPacket(pitch, yawn, (ushort)CSTypes.playerRotation);
+                oldRot = localPlayer.transform.rotation;
             }
         }
 
@@ -235,11 +220,12 @@ namespace MultiplayerAssets
 
             return packet.ToArray();
         }
-        void RotationToPacket(float rotation, ushort type)
+        void RotationToPacket(float pitch, float yawn, ushort type)
         {
-            byte[] _rotation = BitConverter.GetBytes(rotation);
+            byte[] pitchBytes = BitConverter.GetBytes(pitch);
+            byte[] yawnBytes = BitConverter.GetBytes(yawn);
 
-            byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, _rotation);
+            byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, pitchBytes.Concat(yawnBytes).ToArray());
 
             udp.QueuePacket(packet, playerId);
         }
@@ -384,13 +370,15 @@ namespace MultiplayerAssets
 
         }
 
-        Tuple<ushort, float> ReadPlayerRotation(byte[] bytes)
+        Tuple<ushort, float, float> ReadPlayerRotation(byte[] bytes)
         {
             ushort id = BitConverter.ToUInt16(bytes, 0);
 
-            float rotation = BitConverter.ToSingle(bytes, sizeof(ushort));
+            float pitch = BitConverter.ToSingle(bytes, sizeof(ushort));
+            float yawn = BitConverter.ToSingle(bytes, sizeof(ushort) + sizeof(Single));
 
-            return Tuple.Create<ushort, float>(id, rotation);
+
+            return Tuple.Create<ushort, float, float>(id, pitch, yawn);
         }
 
         Tuple<ushort?, Vector3> byteToPosition(byte[] bytes, int type)
@@ -429,9 +417,9 @@ namespace MultiplayerAssets
 
         void PlayerRotation(byte[] packetContent)
         {
-            Tuple<ushort, float> response = ReadPlayerRotation(packetContent);
+            Tuple<ushort, float, float> response = ReadPlayerRotation(packetContent);
 
-            instance.clientsManager.PlayerRotation((ushort)response.Item1, response.Item2);
+            instance.clientsManager.PlayerRotation((ushort)response.Item1, response.Item2, response.Item3);
         }
 
     }

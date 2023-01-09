@@ -96,7 +96,7 @@ namespace CoolNameSpace
 
                 int clientId = BitConverter.ToUInt16(data, 0);
 
-                Console.WriteLine($"packet from client {clientId}, {clients[clientId].udp.endpoint}");
+                //                Console.WriteLine($"packet from client {clientId}, {clients[clientId].udp.endpoint}");
 
                 if (clientId == 0)
                 {
@@ -116,7 +116,7 @@ namespace CoolNameSpace
                     clients[clientId].HandlePacket(data.Skip(sizeof(ushort)).ToArray());
                 }
 
-                Console.WriteLine($"Packet, length: {data.Length}, from: {clientId}");
+                // Console.WriteLine($"Packet, length: {data.Length}, from: {clientId}");
             }
 
             catch (Exception _ex)
@@ -233,7 +233,7 @@ namespace CoolNameSpace
 
             client.tcp.packetQueue.Enqueue(ConstructPackage((ushort)CSTypes.playerId, byteId));
 
-            Console.WriteLine("Packet queue: " + client.tcp.packetQueue.Count);
+            //            Console.WriteLine("Packet queue: " + client.tcp.packetQueue.Count);
 
             while (client.tcp.tcpClient.Client.Connected)
             {

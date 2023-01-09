@@ -19,6 +19,7 @@ namespace MultiplayerAssets
         public float tickRate;
 
         public Queue<(ushort, Vector3)> playerSpawnQueue = new Queue<(ushort, Vector3)>();
+
         public class Client
         {
             public ushort id;
@@ -26,21 +27,24 @@ namespace MultiplayerAssets
 
             public Lerper lerper;
 
+            public PlayerScript playerScript;
+
             public GameObject player;
+
 
             public Client(ushort _id, Vector3 _position, GameObject _player)
             {
                 id = _id;
                 position = _position;
                 player = _player;
+
+                playerScript = _player.GetComponent<PlayerScript>();
             }
 
         }
 
         void Start()
         {
-            Debug.Log("Start");
-            Debug.Log("hej");
         }
 
         void Update()
@@ -67,15 +71,14 @@ namespace MultiplayerAssets
             Debug.Log("Instantiate player at:" + position);
         }
 
-        public void PlayerRotation(int id, float rotation)
+        public void PlayerRotation(int id, float pitch, float yawn)
         {
 
             Client? client = clients.Find(client => client.id == id);
 
             if (client != null)
             {
-                Quaternion target = Quaternion.Euler(new Vector3(0, rotation, 0));
-                client.player.transform.rotation = target;
+                client.playerScript.PlayerRotation(pitch, yawn);
             }
         }
 
@@ -99,7 +102,6 @@ namespace MultiplayerAssets
                     client.lerper.time = 0.008f;
                     client.lerper.startPos = positions[^2].Item2;
                     client.lerper.targetPos = positions[^1].Item2;
-
                 }
 
             }

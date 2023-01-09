@@ -11,7 +11,7 @@ namespace CoolNameSpace
 
         public float x, y, z;
 
-        public float rotation;
+        public float pitch, yawn;
 
         public Udp udp;
 
@@ -89,7 +89,6 @@ namespace CoolNameSpace
 
             foreach (Client client in instance.clients.Values)
             {
-                Console.WriteLine("Enqued packet");
                 client.udp.OutPacketQueue.Enqueue(packet);
             }
 
@@ -100,18 +99,19 @@ namespace CoolNameSpace
 
             List<byte> bytes = new List<byte>();
 
-            float rotation = BitConverter.ToSingle(packetContent);
-            rotation = rotation;
+            pitch = BitConverter.ToSingle(packetContent);
+            yawn = BitConverter.ToSingle(packetContent, sizeof(Single));
 
             byte[] idBytes = BitConverter.GetBytes(id);
-            byte[] rotationBytes = BitConverter.GetBytes(rotation);
+            byte[] pitchBytes = BitConverter.GetBytes(pitch);
+            byte[] yawnBytes = BitConverter.GetBytes(yawn);
 
             bytes.AddRange(idBytes);
-            bytes.AddRange(rotationBytes);
+            bytes.AddRange(pitchBytes);
+            bytes.AddRange(yawnBytes);
 
             byte[] packet = ConstructPackage((ushort)CSTypes.playerRotation, bytes.ToArray());
 
-            Console.WriteLine("Type:" + BitConverter.ToUInt16(packet));
 
             SendToAllOther(packet);
         }
@@ -132,7 +132,6 @@ namespace CoolNameSpace
             ushort packetType = packet.ReadUShort();
             ushort packetLength = packet.ReadUShort();
             byte[] packetContent = packet.ReadContent(packetLength);
-            Console.WriteLine("packet type: " + packetType);
 
             if (packetType == 0)
             {
