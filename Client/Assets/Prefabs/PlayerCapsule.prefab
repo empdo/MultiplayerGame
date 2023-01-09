@@ -41,6 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6857748540347102844}
+  - component: {fileID: 2728261100744810738}
   m_Layer: 0
   m_Name: Bone.014
   m_TagString: Untagged
@@ -55,7 +56,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 61438353598456631}
-  m_LocalRotation: {x: 0.9786113, y: 0.025367884, z: 0.201443, w: -0.03312362}
+  m_LocalRotation: {x: 0.70379686, y: 0.068337545, z: 0.068337545, w: -0.70379686}
   m_LocalPosition: {x: 0.0040526604, y: -0.0066172592, z: 0.02522615}
   m_LocalScale: {x: 1.0000069, y: 1, z: 1.0000051}
   m_ConstrainProportionsScale: 0
@@ -63,7 +64,19 @@ Transform:
   - {fileID: 3088069728607497473}
   m_Father: {fileID: 2899740119314242374}
   m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 270, y: 0, z: -11.092}
+--- !u!114 &2728261100744810738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 61438353598456631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b66e804db0091a3dbbbd553d5f197f2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &179209157851616295
 GameObject:
   m_ObjectHideFlags: 0
@@ -298,6 +311,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3445220087326021528}
   - component: {fileID: 6019041167378018271}
+  - component: {fileID: 5629429905023894790}
   m_Layer: 0
   m_Name: EyeL
   m_TagString: Untagged
@@ -477,6 +491,18 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.0039265435, y: 0.010705297, z: 0.008834365}
     m_Extent: {x: 0.0017214245, y: 0.0017459514, z: 0.0013347045}
   m_DirtyAABB: 0
+--- !u!114 &5629429905023894790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 742752015841017073}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b66e804db0091a3dbbbd553d5f197f2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &780092031127954614
 GameObject:
   m_ObjectHideFlags: 0
@@ -2233,6 +2259,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3891202307069697830}
   - component: {fileID: 3178887423995769454}
+  - component: {fileID: 5546835955189712932}
   m_Layer: 0
   m_Name: EyeR
   m_TagString: Untagged
@@ -2412,6 +2439,18 @@ SkinnedMeshRenderer:
     m_Center: {x: 0.003929092, y: 0.010705301, z: 0.008834369}
     m_Extent: {x: 0.001659519, y: 0.0016233893, z: 0.0013095157}
   m_DirtyAABB: 0
+--- !u!114 &5546835955189712932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4076120713771146091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b66e804db0091a3dbbbd553d5f197f2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4129171681634057784
 GameObject:
   m_ObjectHideFlags: 0
@@ -4557,6 +4596,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3974696332100406756}
+  - component: {fileID: 779463974481086616}
   m_Layer: 0
   m_Name: Bone.015
   m_TagString: Untagged
@@ -4571,7 +4611,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7459148276667805761}
-  m_LocalRotation: {x: 0.9611218, y: -0.0143842315, z: -0.27511138, w: -0.018755294}
+  m_LocalRotation: {x: 0.7070775, y: -0.006434315, z: -0.006434315, w: -0.7070775}
   m_LocalPosition: {x: -0.004023222, y: -0.006772393, z: 0.024985112}
   m_LocalScale: {x: 1.0000008, y: 1.0000001, z: 1.0000005}
   m_ConstrainProportionsScale: 0
@@ -4579,7 +4619,19 @@ Transform:
   - {fileID: 35064144162933768}
   m_Father: {fileID: 2899740119314242374}
   m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 270, y: 0, z: 1.043}
+--- !u!114 &779463974481086616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7459148276667805761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b66e804db0091a3dbbbd553d5f197f2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7578496087089555796
 GameObject:
   m_ObjectHideFlags: 0
@@ -5503,6 +5555,8 @@ GameObject:
   - component: {fileID: 6955354576963001132}
   - component: {fileID: 3544709401375221567}
   - component: {fileID: 8879900286870646959}
+  - component: {fileID: 1374877827648364165}
+  - component: {fileID: 3001688184297280667}
   m_Layer: 8
   m_Name: PlayerCapsule
   m_TagString: Player
@@ -5590,6 +5644,44 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   aimObject: {fileID: 8188463921346154971}
+  leye: {fileID: 61438353598456631}
+  reye: {fileID: 7459148276667805761}
+--- !u!95 &1374877827648364165
+Animator:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &3001688184297280667
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fff0960ef4ea6e04eac66b4a7fd2189d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RigLayers:
+  - m_Rig: {fileID: 0}
+    m_Active: 1
+  m_Effectors: []
 --- !u!1 &8753097613331998590
 GameObject:
   m_ObjectHideFlags: 0
