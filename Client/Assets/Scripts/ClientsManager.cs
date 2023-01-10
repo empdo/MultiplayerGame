@@ -111,6 +111,7 @@ namespace MultiplayerAssets
                 foreach ((ushort, Vector3) player in playerSpawnQueue)
                 {
                     l.Append(player.Item1);
+                    Debug.Log("Added player with id: " + player.Item1);
                 }
 
                 if (!l.Contains(_id))

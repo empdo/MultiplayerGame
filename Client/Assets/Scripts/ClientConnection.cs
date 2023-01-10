@@ -304,8 +304,6 @@ namespace MultiplayerAssets
                     return;
                 }
 
-                Debug.Log("Recieved data!");
-
                 ThreadManager.ExecuteOnMainThread(() =>
                 {
                     Debug.Log("sak");
