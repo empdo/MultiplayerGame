@@ -306,7 +306,6 @@ namespace MultiplayerAssets
 
                 ThreadManager.ExecuteOnMainThread(() =>
                 {
-                    Debug.Log("sak");
                     HandleUdpData(_data);
 
                 });
@@ -344,7 +343,6 @@ namespace MultiplayerAssets
             switch (packetType)
             {
                 case (ushort)CSTypes.ping:
-                    Debug.Log("tick packet");
                     instance.UdpOnTick();
                     break;
                 case (ushort)CSTypes.playerPosition:
@@ -400,7 +398,7 @@ namespace MultiplayerAssets
         {
             Tuple<ushort?, Vector3> response = byteToPosition(packetContent, 1);
 
-            if (response.Item1 != null)
+            if (response.Item1 != null && response.Item2 != null)
             {
                 ushort id = (ushort)response.Item1;
                 Vector3 position = response.Item2;

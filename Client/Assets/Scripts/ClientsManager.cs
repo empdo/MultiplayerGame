@@ -39,6 +39,7 @@ namespace MultiplayerAssets
                 player = _player;
 
                 playerScript = _player.GetComponent<PlayerScript>();
+
             }
 
         }
@@ -62,8 +63,6 @@ namespace MultiplayerAssets
             GameObject player = Instantiate(playerPrefab, position, Quaternion.identity);
 
             Client client = new Client(id, position, player);
-            client.lerper = client.player.GetComponent(typeof(Lerper)) as Lerper;
-            client.lerper.player = player;
 
             clients.Add(client);
 
@@ -87,23 +86,25 @@ namespace MultiplayerAssets
 
             Client? client = clients.Find(client => client.id == _id);
 
-            positionPacketBuffer.Add((_id, position));
-
-            if (client != null && client.lerper != null)
+            if (client != null)
             {
-                List<(ushort, Vector3)> positions = positionPacketBuffer.Where(packet => packet.Item1 == _id).ToList();
 
-                if (positions.Count() == 1)
+                if (client.playerScript != null)
                 {
-                    client.player.transform.position = position;
-                }
-                else
-                {
-                    client.lerper.time = 0.008f;
-                    client.lerper.startPos = positions[^2].Item2;
-                    client.lerper.targetPos = positions[^1].Item2;
-                }
+                    client.playerScript.positions.Add(position);
 
+                    if (client.playerScript.positions.Count() == 1)
+                    {
+                        client.player.transform.position = position;
+                    }
+                    else
+                    {
+                        client.playerScript.time = 0.08f;
+                        client.playerScript.startPos = client.playerScript.positions[^2];
+                        client.playerScript.targetPos = client.playerScript.positions[^1];
+                    }
+
+                }
             }
             else
             {
