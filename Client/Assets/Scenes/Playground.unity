@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 8900000, guid: 619e305f5165a9946b7f72464e44ca4a, type: 3}
   m_Sun: {fileID: 2114283754330233425}
-  m_IndirectSpecularColor: {r: 0.08027219, g: 0.09966975, b: 0.30107805, a: 1}
+  m_IndirectSpecularColor: {r: 0.080425136, g: 0.09980642, b: 0.30107093, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -161,9 +161,9 @@ RectTransform:
   m_Father: {fileID: 1854992826}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 383.6, y: -209.3}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: -72.5, y: 26.800003}
   m_SizeDelta: {x: 145, y: 53.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &84479728
@@ -3190,10 +3190,10 @@ RectTransform:
   m_Father: {fileID: 726183944}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.000091552734, y: -5}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1001 &1979352518
 PrefabInstance:
@@ -3919,6 +3919,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1477932487}
     m_Modifications:
+    - target: {fileID: 2779373384791953795, guid: 2d3a85ecde41a8246a79669975912b74,
+        type: 3}
+      propertyPath: canvas
+      value: 
+      objectReference: {fileID: 726183943}
     - target: {fileID: 2779373384791953795, guid: 2d3a85ecde41a8246a79669975912b74,
         type: 3}
       propertyPath: IpInput

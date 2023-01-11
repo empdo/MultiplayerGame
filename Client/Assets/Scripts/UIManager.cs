@@ -17,6 +17,8 @@ namespace MultiplayerAssets
         public Button submitButton;
         public TextMeshProUGUI pingText;
 
+        public GameObject canvas;
+
         public GameObject enviroment;
         private bool _UIState;
         public bool UIState
@@ -41,11 +43,7 @@ namespace MultiplayerAssets
         }
         void SetUIState()
         {
-
-            submitButton.gameObject.SetActive(_UIState);
-            PortInput.gameObject.SetActive(_UIState);
-            IpInput.gameObject.SetActive(_UIState);
-            enviroment.SetActive(!_UIState);
+            canvas.SetActive(false);
 
             Cursor.visible = _UIState;
         }
