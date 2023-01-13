@@ -20,7 +20,7 @@ namespace StarterAssets
         public bool cursorLocked = false;
         public bool cursorInputForLook = true;
 
-        public bool menuState = true;
+        public static bool menuState = true;
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 		public void OnMove(InputValue value)
@@ -76,6 +76,7 @@ namespace StarterAssets
         public void MenuInput(bool newState)
         {
             menuState = !menuState;
+            Debug.Log(menuState);
 
             SetCursorState(menuState);
         }
@@ -90,6 +91,7 @@ namespace StarterAssets
             Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
 
             Cursor.visible = !newState;
+
         }
     }
 

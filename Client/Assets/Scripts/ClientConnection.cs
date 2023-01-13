@@ -45,7 +45,7 @@ namespace MultiplayerAssets
         static NetworkStream stream;
         public GameObject playerPrefab;
         public GameObject localPlayerPrefab;
-        GameObject localPlayer;
+        public GameObject localPlayer;
         public ushort playerId;
         Vector3 oldpos;
 
