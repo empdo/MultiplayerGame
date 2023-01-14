@@ -16,7 +16,8 @@ namespace MultiplayerAssets
 
         public TMP_InputField IpInput;
         public TMP_InputField PortInput;
-        public Button submitButton;
+        public Button connectButton;
+        public Button disconnectButton;
         public TextMeshProUGUI pingText;
 
         public GameObject canvas;
@@ -27,6 +28,8 @@ namespace MultiplayerAssets
         public ClientConnection clientConnection;
 
         UnityEngine.Camera localCamera;
+
+        public ChatScript chatScript;
         private bool _UIState;
         public bool UIState
 

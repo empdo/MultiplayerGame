@@ -19,6 +19,7 @@ namespace CoolNameSpace
         playerPosition,
         playerRotation,
         playerStateChange,
+        disconnect,
     }
     public class Server
     {
@@ -224,6 +225,12 @@ namespace CoolNameSpace
 
         }
 
+        void PlayerDisconnect(Client client) {
+            byte[] data = Encoding.ASCII.GetBytes("disconnect");
+            byte[] packet = ConstructPackage((ushort)CSTypes.disconnect, data);
+            client.tcp.packetQueue.Enqueue(packet);
+        }
+
         public void clientHandler(object count)
         {
             Console.WriteLine("Count: " + count);
@@ -231,6 +238,7 @@ namespace CoolNameSpace
             lock (_lock) { client = clients[(int)count]; }
             byte[] byteId = BitConverter.GetBytes((ushort)(int)count);
 
+            //send player it's id.
             client.tcp.packetQueue.Enqueue(ConstructPackage((ushort)CSTypes.playerId, byteId));
 
             //            Console.WriteLine("Packet queue: " + client.tcp.packetQueue.Count);
@@ -252,6 +260,9 @@ namespace CoolNameSpace
 
                     switch (packetType)
                     {
+                        case (ushort)CSTypes.disconnect:
+                            PlayerDisconnect(client);
+                            break;
                     }
                 }
             }

@@ -21,11 +21,11 @@ namespace MultiplayerAssets
     {
         ping = 1,
         playerId,
-
         playerJoin,
         playerPosition,
         playerRotation,
         playerStateChange,
+        disconnect,
     }
     public enum SCTypes
     {
@@ -67,9 +67,31 @@ namespace MultiplayerAssets
         void Start()
         {
             instance = this;
-            _UIManager.submitButton.onClick.AddListener(Connect);
+            _UIManager.connectButton.onClick.AddListener(Connect);
+            _UIManager.disconnectButton.onClick.AddListener(Disconnect);
             serverTick = 2;
         }
+
+        void Disconnect() {
+            //add suport for null packet content
+            byte[] data = Encoding.ASCII.GetBytes("disconnect");
+            byte[] packet = ConstructPackage(((ushort)CSTypes.disconnect), data);
+            packetQueue.Enqueue(packet);
+        }
+
+        void RemoveServerConnection() {
+
+            client.Client.Shutdown(SocketShutdown.Both);
+            stream.Close(10000); //allow for timeout
+            client.Close();
+            
+            client = null;
+            stream = null;
+            udp = null;
+
+            Destroy(localPlayer);
+        }
+
         void Connect()
         {
             Debug.Log("Connecting to port: " + port);
@@ -149,6 +171,9 @@ namespace MultiplayerAssets
                     case (ushort)CSTypes.playerId:
                         HandlePlayerId(packetContent);
                         break;
+                    case (ushort)CSTypes.disconnect:
+                        RemoveServerConnection();
+                        break;
                 }
 
             }
@@ -184,7 +209,7 @@ namespace MultiplayerAssets
 
             if (currentTick % 125 == 0)
             {
-                _UIManager.pingText.text = "Tickrate :" + currentTickRate;
+                _UIManager.pingText.text = $"Tickrate: {currentTickRate}ms";
             }
 
             currentTickRate = 0;
@@ -249,9 +274,6 @@ namespace MultiplayerAssets
 
             udp.QueuePacket(packet.ToArray(), playerId);
         }
-
-
-
     }
 
     public class Udp
@@ -287,9 +309,6 @@ namespace MultiplayerAssets
 
             connected = true;
             Debug.Log("Udp connection established");
-
-
-            //            client.BeginSend(packet, packet.Length, endpoint, null, null);
 
         }
 
@@ -405,9 +424,15 @@ namespace MultiplayerAssets
 
                 if (instance.playerId == id) return;
 
+                Client? client = instance.clientsManager.clients.Find(client => client.id == id);
+
+                if (client == null) {
+                    instance._UIManager.chatScript.AddMessage($"Player connected with id: {id}");
+                }
+
                 Debug.Log("Postion packet from:" + id);
 
-                instance.clientsManager.PlayerPosition(id, position);
+                instance.clientsManager.PlayerPosition(client, id, position);
             }
         }
 

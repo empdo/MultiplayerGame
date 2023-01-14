@@ -10,16 +10,6 @@ using UnityEngine;
 
 namespace MultiplayerAssets
 {
-    public class ClientsManager : MonoBehaviour
-    {
-        public GameObject playerPrefab;
-
-        public List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
-        public List<Client> clients = new List<Client>();
-        public float tickRate;
-
-        public Queue<(ushort, Vector3)> playerSpawnQueue = new Queue<(ushort, Vector3)>();
-
         public class Client
         {
             public ushort id;
@@ -43,6 +33,16 @@ namespace MultiplayerAssets
             }
 
         }
+    public class ClientsManager : MonoBehaviour
+    {
+        public GameObject playerPrefab;
+
+        public List<(ushort, Vector3)> positionPacketBuffer = new List<(ushort, Vector3)>();
+        public List<Client> clients = new List<Client>();
+        public float tickRate;
+
+        public Queue<(ushort, Vector3)> playerSpawnQueue = new Queue<(ushort, Vector3)>();
+
 
         void Start()
         {
@@ -81,10 +81,8 @@ namespace MultiplayerAssets
             }
         }
 
-        public void PlayerPosition(ushort _id, Vector3 position)
+        public void PlayerPosition(Client? client, ushort _id, Vector3 position)
         {
-
-            Client? client = clients.Find(client => client.id == _id);
 
             if (client != null)
             {
