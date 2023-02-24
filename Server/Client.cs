@@ -54,9 +54,9 @@ namespace CoolNameSpace
 
             return packet.ToArray();
         }
+
         public byte[] PositionToBytes(float[] position, ushort id)
         {
-
             List<byte> packet = new List<byte>();
 
             byte[] xpos = BitConverter.GetBytes(position[0]);
